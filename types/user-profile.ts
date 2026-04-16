@@ -57,6 +57,25 @@ export type HostRulesData = {
   accepted: string[];
 };
 
+export type HostGalleryImage = {
+  id: string;
+  url: string;
+  alt: string;
+};
+
+export type HostReviewData = {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  text: string;
+};
+
+export type HostContentData = {
+  gallery: HostGalleryImage[];
+  reviews: HostReviewData[];
+};
+
 export type AppProfile = {
   uid: string;
   email: string;
@@ -75,4 +94,5 @@ export type AppProfile = {
   hostSetup?: HostSetupData;
   hostAvailability?: HostAvailabilityData;
   hostRules?: HostRulesData;
+  hostContent?: HostContentData;
 };
