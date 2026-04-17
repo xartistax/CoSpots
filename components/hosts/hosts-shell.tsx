@@ -51,36 +51,71 @@ export function HostsShell({ hosts }: HostsShellProps) {
   }
 
   return (
-    <section className="mx-auto grid h-full max-w-7xl gap-6 p-4 md:grid-cols-2">
-      <div className="min-h-0 overflow-hidden rounded-xl bg-card">
-        <ScrollArea className="h-full">
-          <div className="space-y-4 px-1 py-1 pr-4">
-            {selectedMapCanton ? (
-              <div className="flex items-center justify-between px-2">
-                <p className="text-sm font-medium">{selectedMapCanton}</p>
-                <button type="button" onClick={handleResetCantonFilter} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
-                  Reset
-                </button>
-              </div>
-            ) : null}
-
-            <HostListItems
-              hosts={filteredHosts}
-              selectedHostId={selectedHostId}
-              onSelectHost={handleSelectHost}
-              onHoverHost={setHoveredHostId}
-              emptyMessage="Keine Hosts gefunden."
-            />
-          </div>
-        </ScrollArea>
-      </div>
-
-      <div className="min-h-0 rounded-xl bg-card ">
+    <section className="mx-auto h-full max-w-7xl p-4">
+      <div className="h-full md:hidden">
         {selectedHost ? (
           <HostDetailsPanel host={selectedHost} onClose={handleCloseDetails} />
         ) : (
-          <SwitzerlandMap selectedCanton={hoveredCanton} onSelectCanton={handleSelectCanton} />
+          <div className="h-full overflow-hidden rounded-3xl bg-card">
+            <ScrollArea className="h-full">
+              <div className="space-y-4 px-1 py-1 pr-4">
+                {selectedMapCanton ? (
+                  <div className="sticky top-0 z-10 border-b bg-background/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-base font-semibold">{selectedMapCanton}</p>
+                      <button type="button" onClick={handleResetCantonFilter} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                        Zurücksetzen
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <HostListItems
+                  hosts={filteredHosts}
+                  selectedHostId={selectedHostId}
+                  onSelectHost={handleSelectHost}
+                  onHoverHost={setHoveredHostId}
+                  emptyMessage="Keine Hosts gefunden."
+                />
+              </div>
+            </ScrollArea>
+          </div>
         )}
+      </div>
+
+      <div className="hidden h-full gap-6 md:grid md:grid-cols-2">
+        <div className="min-h-0 overflow-hidden rounded-3xl bg-card">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 px-1 py-1 pr-4">
+              {selectedMapCanton ? (
+                <div className="sticky top-0 z-10 border-b bg-background/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-base font-semibold">{selectedMapCanton}</p>
+                    <button type="button" onClick={handleResetCantonFilter} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                      Zurücksetzen
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <HostListItems
+                hosts={filteredHosts}
+                selectedHostId={selectedHostId}
+                onSelectHost={handleSelectHost}
+                onHoverHost={setHoveredHostId}
+                emptyMessage="Keine Hosts gefunden."
+              />
+            </div>
+          </ScrollArea>
+        </div>
+
+        <div className="min-h-0 rounded-3xl bg-card">
+          {selectedHost ? (
+            <HostDetailsPanel host={selectedHost} onClose={handleCloseDetails} />
+          ) : (
+            <SwitzerlandMap selectedCanton={hoveredCanton} onSelectCanton={handleSelectCanton} />
+          )}
+        </div>
       </div>
     </section>
   );

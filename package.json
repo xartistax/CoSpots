@@ -24,6 +24,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.1",
+    "react-sticky-el": "^2.1.1",
     "shadcn": "^4.2.0",
     "tailwind-merge": "^3.5.0",
     "tailwind-scrollbar": "^4.0.2",

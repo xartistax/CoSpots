@@ -179,7 +179,7 @@ export const onboardingConfig = {
           placeholder: "8",
         },
         price: {
-          label: "Standard-Preis pro Slot",
+          label: "Standard-Preis pro CoSpot Slot",
           id: "price",
           placeholder: "12",
         },

@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ComposableMap, Geographies, Geography, Latitude, Longitude } from "@vnedyalk0v/react19-simple-maps";
 
 import chCantons from "@/lib/maps/ch-cantons.json";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { CantonName } from "@/lib/maps/cantons";
 
@@ -23,7 +25,27 @@ function normalize(value: string): string {
 }
 
 export function SwitzerlandMap({ selectedCanton = null, className, onSelectCanton }: SwitzerlandMapProps) {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setIsReady(true);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
   const normalizedSelectedCanton = selectedCanton ? normalize(selectedCanton) : null;
+
+  if (!isReady) {
+    return (
+      <div className={cn("flex h-full w-full items-center justify-center", className)}>
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("h-full w-full", className)}>
