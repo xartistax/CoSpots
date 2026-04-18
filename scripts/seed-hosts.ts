@@ -1,14 +1,16 @@
-import { adminDb } from "@/lib/firebase/admin";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { initializeApp, cert, getApps, type ServiceAccount } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+
 import type { AppProfile, HostAvailabilityData, HostContentData, HostLocationData, HostProfileData, HostRulesData, HostSetupData } from "@/types/user-profile";
-
-const now = new Date().toISOString();
-
-const RULE_IDS: HostRulesData["accepted"] = ["booking-limit", "no-claim", "house-rules", "legal"];
 
 type SeedHost = {
   uid: string;
   email: string;
   avatarUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
   hostProfile: HostProfileData;
   hostLocation: HostLocationData;
   hostSetup: HostSetupData;
@@ -17,183 +19,70 @@ type SeedHost = {
   hostContent: HostContentData;
 };
 
-const hosts: SeedHost[] = [
+const seedHosts: SeedHost[] = [
+  // paste generated hosts here
   {
     uid: "seed-host-001",
-    email: "hello@metro-hub-space-geneve.ch",
+    email: "hello@riverside-studio-desk-zuerich.ch",
     avatarUrl: null,
+    createdAt: "2025-11-25T13:12:59.782Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
     hostProfile: {
-      operatorName: "Metro Genève GmbH",
-      phone: "+41 61 751 83 01",
-      locationName: "Metro Hub Space",
-      address: "Spitalgasse 82",
-      city: "Genève",
+      operatorName: "Riverside Lounge Zürich AG",
+      phone: "+41 31 215 67 01",
+      locationName: "Riverside Studio Desk",
+      address: "Rue du Rhône 5",
+      city: "Zürich",
     },
     hostLocation: {
-      category: "other",
-      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://metro-hub-space-geneve.ch",
-      instagram: "https://www.instagram.com/metro-hub-space-geneve",
-      amenities: ["wc", "laptop-zone", "wifi", "power"],
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://riverside-studio-desk-zuerich.ch",
+      instagram: "https://www.instagram.com/riverside-studio-desk-zuerich",
+      amenities: ["wc", "wifi"],
     },
     hostSetup: {
       spots: 24,
-      price: 11,
+      price: 30,
       marked: true,
       laptopZoneOnly: false,
-      slotDuration: "3h",
+      slotDuration: "2h",
     },
     hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "08:00",
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "10:00",
       to: "19:00",
       recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
+      gracePeriod: 10,
+      extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-001-image-1",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Hub Space Bild 1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Studio Desk Bild 1",
         },
         {
           id: "seed-host-001-image-2",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Hub Space Bild 2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Studio Desk Bild 2",
         },
         {
           id: "seed-host-001-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Hub Space Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-002",
-    email: "hello@riverside-desk-house-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Café Zürich GmbH",
-      phone: "+41 44 913 64 02",
-      locationName: "Riverside Desk House",
-      address: "Hardstrasse 28",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://riverside-desk-house-zuerich.ch",
-      instagram: "https://www.instagram.com/riverside-desk-house-zuerich",
-      amenities: ["power", "wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 32,
-      price: 14,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-002-image-1",
           url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Desk House Bild 1",
-        },
-        {
-          id: "seed-host-002-image-2",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Desk House Bild 2",
-        },
-        {
-          id: "seed-host-002-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Desk House Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-003",
-    email: "hello@riverside-lab-workspace-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Restaurant Basel GmbH",
-      phone: "+41 61 500 95 03",
-      locationName: "Riverside Lab Workspace",
-      address: "Bahnhofstrasse 19",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://riverside-lab-workspace-basel.ch",
-      instagram: "https://www.instagram.com/riverside-lab-workspace-basel",
-      amenities: ["wifi", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 17,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-003-image-1",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-003-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-003-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 3",
+          alt: "Riverside Studio Desk Bild 3",
         },
       ],
       reviews: [
         {
-          id: "seed-host-003-review-1",
-          author: "Mila",
-          rating: 5,
-          date: "12.04.2026",
+          id: "seed-host-001-review-1",
+          author: "Tom",
+          rating: 4,
+          date: "03.02.2026",
           text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
         },
       ],
@@ -201,72 +90,217 @@ const hosts: SeedHost[] = [
   },
 
   {
-    uid: "seed-host-004",
-    email: "hello@pulse-studio-desk-aarau.ch",
+    uid: "seed-host-002",
+    email: "hello@vista-dayspace-neuchatel.ch",
     avatarUrl: null,
+    createdAt: "2026-01-17T18:57:01.765Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
     hostProfile: {
-      operatorName: "Pulse Lounge Aarau AG",
-      phone: "+41 21 541 36 04",
-      locationName: "Pulse Studio Desk",
-      address: "Langstrasse 60",
-      city: "Aarau",
+      operatorName: "Vista Restaurant Neuchâtel GmbH",
+      phone: "+41 31 573 35 02",
+      locationName: "Vista Dayspace",
+      address: "Langstrasse 48",
+      city: "Neuchâtel",
     },
     hostLocation: {
-      category: "hotel-lounge",
-      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://pulse-studio-desk-aarau.ch",
-      instagram: "https://www.instagram.com/pulse-studio-desk-aarau",
-      amenities: ["wc", "laptop-zone"],
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://vista-dayspace-neuchatel.ch",
+      instagram: "https://www.instagram.com/vista-dayspace-neuchatel",
+      amenities: ["power", "wc"],
     },
     hostSetup: {
-      spots: 29,
-      price: 19,
+      spots: 14,
+      price: 30,
       marked: true,
       laptopZoneOnly: false,
       slotDuration: "4h",
     },
     hostAvailability: {
       days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
+      from: "10:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-002-image-1",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-002-image-2",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-002-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-002-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "13.03.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-003",
+    email: "hello@urban-workspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-25T17:28:04.118Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
+    hostProfile: {
+      operatorName: "Urban Bern GmbH",
+      phone: "+41 31 931 26 03",
+      locationName: "Urban Workspace",
+      address: "Josefstrasse 115",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-workspace-bern.ch",
+      instagram: "https://www.instagram.com/urban-workspace-bern",
+      amenities: ["wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 19,
+      price: 31,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "10:00",
       to: "17:00",
       recurring: true,
-      gracePeriod: 5,
+      gracePeriod: 10,
       extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-003-image-1",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Workspace Bild 1",
+        },
+        {
+          id: "seed-host-003-image-2",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Workspace Bild 2",
+        },
+        {
+          id: "seed-host-003-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-003-review-1",
+          author: "Sara",
+          rating: 4,
+          date: "25.01.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-004",
+    email: "hello@pulse-dayspace-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-27T00:34:08.771Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
+    hostProfile: {
+      operatorName: "Pulse Café Luzern GmbH",
+      phone: "+41 31 600 64 04",
+      locationName: "Pulse Dayspace",
+      address: "Clarastrasse 52",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://pulse-dayspace-luzern.ch",
+      instagram: "https://www.instagram.com/pulse-dayspace-luzern",
+      amenities: ["power", "wc"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 19,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "09:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-004-image-1",
           url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 1",
+          alt: "Pulse Dayspace Bild 1",
         },
         {
           id: "seed-host-004-image-2",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Dayspace Bild 2",
         },
         {
           id: "seed-host-004-image-3",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Dayspace Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-004-review-1",
-          author: "Sofia",
+          author: "Jan",
           rating: 5,
-          date: "25.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+          date: "01.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
         },
         {
           id: "seed-host-004-review-2",
-          author: "Sofia",
-          rating: 5,
-          date: "02.01.2026",
+          author: "Nina",
+          rating: 4,
+          date: "20.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-004-review-3",
+          author: "David",
+          rating: 4,
+          date: "08.03.2026",
           text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
         },
       ],
@@ -275,72 +309,74 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-005",
-    email: "hello@metro-office-lounge-basel.ch",
+    email: "hello@riverside-lab-workspace-winterthur.ch",
     avatarUrl: null,
+    createdAt: "2026-04-02T09:37:23.184Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
     hostProfile: {
-      operatorName: "Metro Bar Basel AG",
-      phone: "+41 91 613 46 05",
-      locationName: "Metro Office Lounge",
-      address: "Baarerstrasse 29",
-      city: "Basel",
+      operatorName: "Riverside Bar Winterthur AG",
+      phone: "+41 52 794 40 05",
+      locationName: "Riverside Lab Workspace",
+      address: "Baarerstrasse 15",
+      city: "Winterthur",
     },
     hostLocation: {
       category: "bar",
       description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://metro-office-lounge-basel.ch",
-      instagram: "https://www.instagram.com/metro-office-lounge-basel",
-      amenities: ["power", "wifi", "laptop-zone", "wc"],
+      website: "https://riverside-lab-workspace-winterthur.ch",
+      instagram: "https://www.instagram.com/riverside-lab-workspace-winterthur",
+      amenities: ["wifi", "power", "laptop-zone"],
     },
     hostSetup: {
-      spots: 17,
-      price: 13,
-      marked: true,
+      spots: 10,
+      price: 10,
+      marked: false,
       laptopZoneOnly: false,
-      slotDuration: "4h",
+      slotDuration: "3h",
     },
     hostAvailability: {
       days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
+      from: "07:00",
       to: "18:00",
       recurring: true,
       gracePeriod: 15,
       extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-005-image-1",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 1",
         },
         {
           id: "seed-host-005-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 2",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 2",
         },
         {
           id: "seed-host-005-image-3",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 3",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-005-review-1",
-          author: "Elin",
-          rating: 4,
-          date: "01.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+          author: "Sofia",
+          rating: 5,
+          date: "20.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
         },
         {
           id: "seed-host-005-review-2",
-          author: "Tom",
-          rating: 5,
-          date: "28.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+          author: "Sara",
+          rating: 4,
+          date: "13.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
         },
       ],
     },
@@ -348,79 +384,67 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-006",
-    email: "hello@loft-studio-desk-zuerich.ch",
+    email: "hello@metro-hub-space-lausanne.ch",
     avatarUrl: null,
+    createdAt: "2026-03-23T23:06:33.717Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
     hostProfile: {
-      operatorName: "Loft Restaurant Zürich GmbH",
-      phone: "+41 21 365 27 06",
-      locationName: "Loft Studio Desk",
-      address: "Spitalgasse 114",
-      city: "Zürich",
+      operatorName: "Metro Lausanne GmbH",
+      phone: "+41 21 253 12 06",
+      locationName: "Metro Hub Space",
+      address: "Hardstrasse 14",
+      city: "Lausanne",
     },
     hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://loft-studio-desk-zuerich.ch",
-      instagram: "https://www.instagram.com/loft-studio-desk-zuerich",
-      amenities: ["power", "wc", "laptop-zone", "wifi"],
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://metro-hub-space-lausanne.ch",
+      instagram: "https://www.instagram.com/metro-hub-space-lausanne",
+      amenities: ["power", "laptop-zone", "wifi", "wc"],
     },
     hostSetup: {
-      spots: 22,
-      price: 23,
+      spots: 15,
+      price: 10,
       marked: true,
       laptopZoneOnly: true,
       slotDuration: "4h",
     },
     hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "08:00",
       to: "21:00",
       recurring: true,
       gracePeriod: 20,
-      extendAllowed: true,
+      extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-006-image-1",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Studio Desk Bild 1",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 1",
         },
         {
           id: "seed-host-006-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Studio Desk Bild 2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 2",
         },
         {
           id: "seed-host-006-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Studio Desk Bild 3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-006-review-1",
-          author: "Marco",
+          author: "Noah",
           rating: 4,
-          date: "21.03.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-006-review-2",
-          author: "Lena",
-          rating: 4,
-          date: "27.02.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-006-review-3",
-          author: "Marco",
-          rating: 4,
-          date: "04.04.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
+          date: "15.03.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
         },
       ],
     },
@@ -428,24 +452,244 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-007",
-    email: "hello@north-cowork-spot-zug.ch",
+    email: "hello@south-workspace-geneve.ch",
     avatarUrl: null,
+    createdAt: "2026-01-18T23:16:48.710Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
     hostProfile: {
-      operatorName: "North Bar Zug AG",
-      phone: "+41 22 416 97 07",
-      locationName: "North Cowork Spot",
-      address: "Kramgasse 18",
-      city: "Zug",
+      operatorName: "South Café Genève GmbH",
+      phone: "+41 52 685 89 07",
+      locationName: "South Workspace",
+      address: "Langstrasse 47",
+      city: "Genève",
     },
     hostLocation: {
-      category: "bar",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://north-cowork-spot-zug.ch",
-      instagram: "https://www.instagram.com/north-cowork-spot-zug",
-      amenities: ["wc", "laptop-zone"],
+      category: "cafe",
+      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://south-workspace-geneve.ch",
+      instagram: "https://www.instagram.com/south-workspace-geneve",
+      amenities: ["power", "wifi", "wc"],
     },
     hostSetup: {
-      spots: 16,
+      spots: 35,
+      price: 15,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "07:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-007-image-1",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 1",
+        },
+        {
+          id: "seed-host-007-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 2",
+        },
+        {
+          id: "seed-host-007-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-007-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "15.03.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+        {
+          id: "seed-host-007-review-2",
+          author: "Elin",
+          rating: 4,
+          date: "21.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-008",
+    email: "hello@south-desk-club-aarau.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-02T02:18:04.720Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
+    hostProfile: {
+      operatorName: "South Restaurant Aarau GmbH",
+      phone: "+41 31 536 97 08",
+      locationName: "South Desk Club",
+      address: "Hardstrasse 44",
+      city: "Aarau",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://south-desk-club-aarau.ch",
+      instagram: "https://www.instagram.com/south-desk-club-aarau",
+      amenities: ["power", "wifi", "wc"],
+    },
+    hostSetup: {
+      spots: 28,
+      price: 22,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "09:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-008-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-008-image-2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-008-image-3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-008-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "10.01.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-008-review-2",
+          author: "Sofia",
+          rating: 5,
+          date: "17.02.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-009",
+    email: "hello@vista-work-lounge-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-30T08:11:10.515Z",
+    updatedAt: "2026-04-18T15:21:08.982Z",
+    hostProfile: {
+      operatorName: "Vista Café Luzern GmbH",
+      phone: "+41 31 487 92 09",
+      locationName: "Vista Work Lounge",
+      address: "Langstrasse 96",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://vista-work-lounge-luzern.ch",
+      instagram: "https://www.instagram.com/vista-work-lounge-luzern",
+      amenities: ["laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 12,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "10:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-009-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Work Lounge Bild 1",
+        },
+        {
+          id: "seed-host-009-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Work Lounge Bild 2",
+        },
+        {
+          id: "seed-host-009-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Work Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-009-review-1",
+          author: "Jan",
+          rating: 5,
+          date: "08.02.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-010",
+    email: "hello@riverside-studio-desk-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-16T21:55:37.966Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Restaurant Lausanne GmbH",
+      phone: "+41 22 656 80 10",
+      locationName: "Riverside Studio Desk",
+      address: "Hardstrasse 93",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://riverside-studio-desk-lausanne.ch",
+      instagram: "https://www.instagram.com/riverside-studio-desk-lausanne",
+      amenities: ["wc", "wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 30,
       price: 10,
       marked: true,
       laptopZoneOnly: false,
@@ -454,29 +698,111 @@ const hosts: SeedHost[] = [
     hostAvailability: {
       days: ["mon", "tue", "wed", "thu", "fri"],
       from: "10:00",
-      to: "19:00",
+      to: "17:00",
       recurring: true,
       gracePeriod: 10,
       extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
-          id: "seed-host-007-image-1",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          id: "seed-host-010-image-1",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-010-image-2",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-010-image-3",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-010-review-1",
+          author: "Noah",
+          rating: 4,
+          date: "24.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-010-review-2",
+          author: "Elin",
+          rating: 4,
+          date: "23.01.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-010-review-3",
+          author: "Marco",
+          rating: 4,
+          date: "08.03.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-011",
+    email: "hello@north-cowork-spot-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-22T08:13:53.062Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "North Lounge St. Gallen AG",
+      phone: "+41 71 203 12 11",
+      locationName: "North Cowork Spot",
+      address: "Marktgasse 57",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://north-cowork-spot-st-gallen.ch",
+      instagram: "https://www.instagram.com/north-cowork-spot-st-gallen",
+      amenities: ["laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 23,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "10:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-011-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
           alt: "North Cowork Spot Bild 1",
         },
         {
-          id: "seed-host-007-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          id: "seed-host-011-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
           alt: "North Cowork Spot Bild 2",
         },
         {
-          id: "seed-host-007-image-3",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          id: "seed-host-011-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
           alt: "North Cowork Spot Bild 3",
         },
       ],
@@ -485,350 +811,68 @@ const hosts: SeedHost[] = [
   },
 
   {
-    uid: "seed-host-008",
-    email: "hello@vista-studio-desk-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Restaurant Zug GmbH",
-      phone: "+41 71 135 15 08",
-      locationName: "Vista Studio Desk",
-      address: "Marktgasse 63",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://vista-studio-desk-zug.ch",
-      instagram: "https://www.instagram.com/vista-studio-desk-zug",
-      amenities: ["wifi", "laptop-zone", "wc", "power"],
-    },
-    hostSetup: {
-      spots: 33,
-      price: 22,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-008-image-1",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-008-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-008-image-3",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-008-review-1",
-          author: "Noah",
-          rating: 4,
-          date: "24.02.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-008-review-2",
-          author: "Sofia",
-          rating: 5,
-          date: "24.04.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-009",
-    email: "hello@south-cowork-spot-lugano.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Café Lugano GmbH",
-      phone: "+41 31 937 23 09",
-      locationName: "South Cowork Spot",
-      address: "Josefstrasse 93",
-      city: "Lugano",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://south-cowork-spot-lugano.ch",
-      instagram: "https://www.instagram.com/south-cowork-spot-lugano",
-      amenities: ["wifi", "wc", "laptop-zone", "power"],
-    },
-    hostSetup: {
-      spots: 15,
-      price: 18,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-009-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-009-image-2",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-009-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-009-review-1",
-          author: "Noah",
-          rating: 4,
-          date: "14.03.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-010",
-    email: "hello@riverside-office-lounge-bern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Bern GmbH",
-      phone: "+41 52 153 86 10",
-      locationName: "Riverside Office Lounge",
-      address: "Clarastrasse 80",
-      city: "Bern",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://riverside-office-lounge-bern.ch",
-      instagram: "https://www.instagram.com/riverside-office-lounge-bern",
-      amenities: ["power", "wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 35,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-010-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-010-image-2",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-010-image-3",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-011",
-    email: "hello@vista-lab-workspace-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Café Neuchâtel GmbH",
-      phone: "+41 31 243 80 11",
-      locationName: "Vista Lab Workspace",
-      address: "Spitalgasse 84",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://vista-lab-workspace-neuchatel.ch",
-      instagram: "https://www.instagram.com/vista-lab-workspace-neuchatel",
-      amenities: ["power", "wc"],
-    },
-    hostSetup: {
-      spots: 18,
-      price: 23,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-011-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-011-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-011-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-011-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "20.02.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-011-review-2",
-          author: "Elin",
-          rating: 5,
-          date: "23.02.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-        {
-          id: "seed-host-011-review-3",
-          author: "Sara",
-          rating: 4,
-          date: "25.03.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
     uid: "seed-host-012",
-    email: "hello@pulse-desk-house-lausanne.ch",
+    email: "hello@urban-cowork-spot-zuerich.ch",
     avatarUrl: null,
+    createdAt: "2026-01-27T11:47:41.848Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Pulse Restaurant Lausanne GmbH",
-      phone: "+41 44 577 51 12",
-      locationName: "Pulse Desk House",
-      address: "Pilatusstrasse 103",
-      city: "Lausanne",
+      operatorName: "Urban Bar Zürich AG",
+      phone: "+41 44 512 56 12",
+      locationName: "Urban Cowork Spot",
+      address: "Seefeldstrasse 88",
+      city: "Zürich",
     },
     hostLocation: {
-      category: "restaurant",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://pulse-desk-house-lausanne.ch",
-      instagram: "https://www.instagram.com/pulse-desk-house-lausanne",
-      amenities: ["power", "wc"],
+      category: "bar",
+      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-cowork-spot-zuerich.ch",
+      instagram: "https://www.instagram.com/urban-cowork-spot-zuerich",
+      amenities: ["wifi", "wc", "power"],
     },
     hostSetup: {
-      spots: 25,
-      price: 11,
+      spots: 30,
+      price: 14,
       marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
+      laptopZoneOnly: false,
+      slotDuration: "2h",
     },
     hostAvailability: {
       days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
+      from: "07:00",
       to: "17:00",
       recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
+      gracePeriod: 20,
+      extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-012-image-1",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 1",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 1",
         },
         {
           id: "seed-host-012-image-2",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 2",
         },
         {
           id: "seed-host-012-image-3",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-012-review-1",
-          author: "Elin",
+          author: "Nina",
           rating: 4,
-          date: "13.02.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-012-review-2",
-          author: "Sara",
-          rating: 4,
-          date: "26.03.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+          date: "06.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
         },
       ],
     },
@@ -836,25 +880,27 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-013",
-    email: "hello@studio-desk-club-bern.ch",
+    email: "hello@south-desk-house-geneve.ch",
     avatarUrl: null,
+    createdAt: "2025-11-15T00:12:55.299Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Studio Restaurant Bern GmbH",
-      phone: "+41 21 405 81 13",
-      locationName: "Studio Desk Club",
-      address: "Clarastrasse 53",
-      city: "Bern",
+      operatorName: "South Lounge Genève AG",
+      phone: "+41 41 618 84 13",
+      locationName: "South Desk House",
+      address: "Langstrasse 82",
+      city: "Genève",
     },
     hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://studio-desk-club-bern.ch",
-      instagram: "https://www.instagram.com/studio-desk-club-bern",
-      amenities: ["wifi", "power", "laptop-zone"],
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://south-desk-house-geneve.ch",
+      instagram: "https://www.instagram.com/south-desk-house-geneve",
+      amenities: ["laptop-zone", "wc"],
     },
     hostSetup: {
-      spots: 35,
-      price: 13,
+      spots: 20,
+      price: 21,
       marked: true,
       laptopZoneOnly: true,
       slotDuration: "2h",
@@ -862,53 +908,46 @@ const hosts: SeedHost[] = [
     hostAvailability: {
       days: ["thu", "fri", "sat", "sun"],
       from: "10:00",
-      to: "18:00",
+      to: "19:00",
       recurring: true,
-      gracePeriod: 20,
+      gracePeriod: 15,
       extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-013-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 1",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 1",
         },
         {
           id: "seed-host-013-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 2",
         },
         {
           id: "seed-host-013-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 3",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-013-review-1",
-          author: "Sara",
+          author: "Jan",
           rating: 5,
-          date: "13.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+          date: "11.04.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
         },
         {
           id: "seed-host-013-review-2",
           author: "David",
-          rating: 5,
-          date: "08.01.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-013-review-3",
-          author: "Marco",
-          rating: 5,
-          date: "05.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+          rating: 4,
+          date: "01.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
         },
       ],
     },
@@ -916,28 +955,112 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-014",
-    email: "hello@pulse-hub-space-luzern.ch",
+    email: "hello@alpine-cowork-spot-luzern.ch",
     avatarUrl: null,
+    createdAt: "2026-02-09T21:34:36.628Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Pulse Luzern GmbH",
-      phone: "+41 31 270 62 14",
-      locationName: "Pulse Hub Space",
-      address: "Langstrasse 116",
+      operatorName: "Alpine Restaurant Luzern GmbH",
+      phone: "+41 41 928 90 14",
+      locationName: "Alpine Cowork Spot",
+      address: "Kramgasse 54",
       city: "Luzern",
     },
     hostLocation: {
-      category: "other",
+      category: "restaurant",
       description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://pulse-hub-space-luzern.ch",
-      instagram: "https://www.instagram.com/pulse-hub-space-luzern",
-      amenities: ["power", "wifi"],
+      website: "https://alpine-cowork-spot-luzern.ch",
+      instagram: "https://www.instagram.com/alpine-cowork-spot-luzern",
+      amenities: ["laptop-zone", "wifi", "power", "wc"],
     },
     hostSetup: {
-      spots: 11,
-      price: 27,
-      marked: true,
+      spots: 10,
+      price: 11,
+      marked: false,
       laptopZoneOnly: false,
-      slotDuration: "2h",
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "10:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-014-image-1",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-014-image-2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-014-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-014-review-1",
+          author: "Elin",
+          rating: 4,
+          date: "10.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-014-review-2",
+          author: "Luca",
+          rating: 5,
+          date: "23.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-014-review-3",
+          author: "Noah",
+          rating: 5,
+          date: "21.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-015",
+    email: "hello@studio-work-lounge-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-23T05:16:13.867Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Genève GmbH",
+      phone: "+41 44 995 99 15",
+      locationName: "Studio Work Lounge",
+      address: "Marktgasse 16",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://studio-work-lounge-geneve.ch",
+      instagram: "https://www.instagram.com/studio-work-lounge-geneve",
+      amenities: ["laptop-zone", "wc", "power", "wifi"],
+    },
+    hostSetup: {
+      spots: 29,
+      price: 27,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
     },
     hostAvailability: {
       days: ["mon", "wed", "thu", "fri", "sat"],
@@ -948,113 +1071,40 @@ const hosts: SeedHost[] = [
       extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-014-image-1",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-014-image-2",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-014-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-014-review-1",
-          author: "Tom",
-          rating: 4,
-          date: "21.02.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-014-review-2",
-          author: "Mila",
-          rating: 5,
-          date: "04.04.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-014-review-3",
-          author: "David",
-          rating: 5,
-          date: "25.01.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-015",
-    email: "hello@south-studio-desk-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Restaurant Zürich GmbH",
-      phone: "+41 52 584 13 15",
-      locationName: "South Studio Desk",
-      address: "Kramgasse 114",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://south-studio-desk-zuerich.ch",
-      instagram: "https://www.instagram.com/south-studio-desk-zuerich",
-      amenities: ["wc", "wifi", "power"],
-    },
-    hostSetup: {
-      spots: 21,
-      price: 30,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-015-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Studio Desk Bild 1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Work Lounge Bild 1",
         },
         {
           id: "seed-host-015-image-2",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Studio Desk Bild 2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Work Lounge Bild 2",
         },
         {
           id: "seed-host-015-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Studio Desk Bild 3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Work Lounge Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-015-review-1",
-          author: "Nina",
+          author: "Elin",
           rating: 5,
-          date: "22.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+          date: "11.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-015-review-2",
+          author: "Noah",
+          rating: 5,
+          date: "22.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
         },
       ],
     },
@@ -1062,56 +1112,58 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-016",
-    email: "hello@urban-desk-house-neuchatel.ch",
+    email: "hello@lake-workspace-lausanne.ch",
     avatarUrl: null,
+    createdAt: "2025-11-27T20:35:33.471Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Urban Lounge Neuchâtel AG",
-      phone: "+41 52 579 65 16",
-      locationName: "Urban Desk House",
-      address: "Spitalgasse 27",
-      city: "Neuchâtel",
+      operatorName: "Lake Lausanne GmbH",
+      phone: "+41 71 182 53 16",
+      locationName: "Lake Workspace",
+      address: "Marktgasse 36",
+      city: "Lausanne",
     },
     hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://urban-desk-house-neuchatel.ch",
-      instagram: "https://www.instagram.com/urban-desk-house-neuchatel",
-      amenities: ["laptop-zone", "wifi"],
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://lake-workspace-lausanne.ch",
+      instagram: "https://www.instagram.com/lake-workspace-lausanne",
+      amenities: ["wifi", "power"],
     },
     hostSetup: {
-      spots: 19,
-      price: 29,
+      spots: 17,
+      price: 25,
       marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
+      laptopZoneOnly: false,
+      slotDuration: "4h",
     },
     hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "21:00",
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "08:00",
+      to: "20:00",
       recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
+      gracePeriod: 20,
+      extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-016-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk House Bild 1",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Workspace Bild 1",
         },
         {
           id: "seed-host-016-image-2",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk House Bild 2",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Workspace Bild 2",
         },
         {
           id: "seed-host-016-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk House Bild 3",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Workspace Bild 3",
         },
       ],
       reviews: [],
@@ -1120,5194 +1172,124 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-017",
-    email: "hello@loft-hub-space-zuerich.ch",
+    email: "hello@urban-hub-space-zug.ch",
     avatarUrl: null,
+    createdAt: "2025-10-29T22:10:10.541Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Loft Restaurant Zürich GmbH",
-      phone: "+41 44 536 51 17",
-      locationName: "Loft Hub Space",
-      address: "Seefeldstrasse 54",
-      city: "Zürich",
+      operatorName: "Urban Zug GmbH",
+      phone: "+41 71 145 92 17",
+      locationName: "Urban Hub Space",
+      address: "Baarerstrasse 55",
+      city: "Zug",
     },
     hostLocation: {
-      category: "restaurant",
-      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://loft-hub-space-zuerich.ch",
-      instagram: "https://www.instagram.com/loft-hub-space-zuerich",
-      amenities: ["power", "laptop-zone", "wc", "wifi"],
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://urban-hub-space-zug.ch",
+      instagram: "https://www.instagram.com/urban-hub-space-zug",
+      amenities: ["laptop-zone", "wc", "power"],
     },
     hostSetup: {
-      spots: 21,
-      price: 17,
+      spots: 30,
+      price: 27,
       marked: true,
       laptopZoneOnly: true,
-      slotDuration: "4h",
+      slotDuration: "3h",
     },
     hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "19:00",
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "10:00",
+      to: "17:00",
       recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
+      gracePeriod: 20,
+      extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-017-image-1",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 1",
         },
         {
           id: "seed-host-017-image-2",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 2",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 2",
         },
         {
           id: "seed-host-017-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 3",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 3",
         },
       ],
-      reviews: [
-        {
-          id: "seed-host-017-review-1",
-          author: "Noah",
-          rating: 5,
-          date: "14.02.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-        {
-          id: "seed-host-017-review-2",
-          author: "Jan",
-          rating: 5,
-          date: "20.02.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-017-review-3",
-          author: "David",
-          rating: 4,
-          date: "05.04.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
+      reviews: [],
     },
   },
 
   {
     uid: "seed-host-018",
-    email: "hello@loft-dayspace-st-gallen.ch",
+    email: "hello@vista-desk-house-basel.ch",
     avatarUrl: null,
+    createdAt: "2025-11-07T09:33:26.351Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Loft St. Gallen GmbH",
-      phone: "+41 52 868 71 18",
-      locationName: "Loft Dayspace",
-      address: "Langstrasse 95",
-      city: "St. Gallen",
+      operatorName: "Vista Lounge Basel AG",
+      phone: "+41 71 451 67 18",
+      locationName: "Vista Desk House",
+      address: "Baarerstrasse 89",
+      city: "Basel",
     },
     hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://loft-dayspace-st-gallen.ch",
-      instagram: "https://www.instagram.com/loft-dayspace-st-gallen",
-      amenities: ["power", "wifi", "laptop-zone", "wc"],
+      category: "hotel-lounge",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://vista-desk-house-basel.ch",
+      instagram: "https://www.instagram.com/vista-desk-house-basel",
+      amenities: ["power", "wc", "wifi"],
     },
     hostSetup: {
-      spots: 28,
-      price: 24,
-      marked: false,
+      spots: 34,
+      price: 30,
+      marked: true,
       laptopZoneOnly: true,
-      slotDuration: "3h",
+      slotDuration: "4h",
     },
     hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "10:00",
       to: "18:00",
       recurring: true,
-      gracePeriod: 20,
+      gracePeriod: 15,
       extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-018-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Dayspace Bild 1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Desk House Bild 1",
         },
         {
           id: "seed-host-018-image-2",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Dayspace Bild 2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Desk House Bild 2",
         },
         {
           id: "seed-host-018-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Dayspace Bild 3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Desk House Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-018-review-1",
-          author: "Jan",
-          rating: 5,
-          date: "26.02.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-019",
-    email: "hello@riverside-office-lounge-bern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Lounge Bern AG",
-      phone: "+41 22 702 89 19",
-      locationName: "Riverside Office Lounge",
-      address: "Josefstrasse 104",
-      city: "Bern",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://riverside-office-lounge-bern.ch",
-      instagram: "https://www.instagram.com/riverside-office-lounge-bern",
-      amenities: ["wc", "power"],
-    },
-    hostSetup: {
-      spots: 28,
-      price: 16,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-019-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-019-image-2",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-019-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-019-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "21.04.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-020",
-    email: "hello@studio-desk-club-luzern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Lounge Luzern AG",
-      phone: "+41 22 353 43 20",
-      locationName: "Studio Desk Club",
-      address: "Seefeldstrasse 6",
-      city: "Luzern",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://studio-desk-club-luzern.ch",
-      instagram: "https://www.instagram.com/studio-desk-club-luzern",
-      amenities: ["power", "wifi", "laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 13,
-      price: 17,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-020-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-020-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-020-image-3",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-021",
-    email: "hello@studio-work-lounge-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Restaurant Lausanne GmbH",
-      phone: "+41 21 370 81 21",
-      locationName: "Studio Work Lounge",
-      address: "Pilatusstrasse 105",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://studio-work-lounge-lausanne.ch",
-      instagram: "https://www.instagram.com/studio-work-lounge-lausanne",
-      amenities: ["wifi", "power", "laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 15,
-      price: 10,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-021-image-1",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-021-image-2",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-021-image-3",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-021-review-1",
-          author: "Mila",
-          rating: 5,
-          date: "07.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-022",
-    email: "hello@lake-desk-house-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Lake Lounge Basel AG",
-      phone: "+41 41 922 86 22",
-      locationName: "Lake Desk House",
-      address: "Pilatusstrasse 71",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://lake-desk-house-basel.ch",
-      instagram: "https://www.instagram.com/lake-desk-house-basel",
-      amenities: ["laptop-zone", "wc", "power", "wifi"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 29,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-022-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 1",
-        },
-        {
-          id: "seed-host-022-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 2",
-        },
-        {
-          id: "seed-host-022-image-3",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-022-review-1",
-          author: "Luca",
-          rating: 4,
-          date: "08.04.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-022-review-2",
-          author: "Tom",
-          rating: 4,
-          date: "04.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-022-review-3",
-          author: "Lena",
-          rating: 4,
-          date: "14.03.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-023",
-    email: "hello@loft-desk-club-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Loft Basel GmbH",
-      phone: "+41 21 934 20 23",
-      locationName: "Loft Desk Club",
-      address: "Kramgasse 63",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://loft-desk-club-basel.ch",
-      instagram: "https://www.instagram.com/loft-desk-club-basel",
-      amenities: ["wc", "laptop-zone", "power"],
-    },
-    hostSetup: {
-      spots: 10,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "09:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-023-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-023-image-2",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-023-image-3",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-023-review-1",
-          author: "Nina",
-          rating: 5,
-          date: "28.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-        {
-          id: "seed-host-023-review-2",
-          author: "Luca",
-          rating: 5,
-          date: "06.01.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-024",
-    email: "hello@vista-dayspace-geneve.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Genève GmbH",
-      phone: "+41 61 164 47 24",
-      locationName: "Vista Dayspace",
-      address: "Rue du Rhône 93",
-      city: "Genève",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://vista-dayspace-geneve.ch",
-      instagram: "https://www.instagram.com/vista-dayspace-geneve",
-      amenities: ["laptop-zone", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 33,
-      price: 16,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-024-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Dayspace Bild 1",
-        },
-        {
-          id: "seed-host-024-image-2",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Dayspace Bild 2",
-        },
-        {
-          id: "seed-host-024-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Dayspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-024-review-1",
-          author: "Sofia",
-          rating: 4,
-          date: "06.01.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-024-review-2",
-          author: "Jan",
-          rating: 4,
-          date: "16.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-025",
-    email: "hello@pulse-studio-desk-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Restaurant Lausanne GmbH",
-      phone: "+41 22 934 47 25",
-      locationName: "Pulse Studio Desk",
-      address: "Clarastrasse 120",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://pulse-studio-desk-lausanne.ch",
-      instagram: "https://www.instagram.com/pulse-studio-desk-lausanne",
-      amenities: ["wifi", "wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 19,
-      price: 28,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-025-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-025-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-025-image-3",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-025-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "13.01.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-026",
-    email: "hello@dock-desk-house-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Dock Restaurant Neuchâtel GmbH",
-      phone: "+41 41 640 22 26",
-      locationName: "Dock Desk House",
-      address: "Josefstrasse 65",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://dock-desk-house-neuchatel.ch",
-      instagram: "https://www.instagram.com/dock-desk-house-neuchatel",
-      amenities: ["laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 26,
-      price: 9,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-026-image-1",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Desk House Bild 1",
-        },
-        {
-          id: "seed-host-026-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Desk House Bild 2",
-        },
-        {
-          id: "seed-host-026-image-3",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-026-review-1",
-          author: "Noah",
-          rating: 5,
-          date: "06.03.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-026-review-2",
-          author: "Lena",
-          rating: 4,
-          date: "23.02.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-027",
-    email: "hello@vista-cowork-spot-aarau.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Restaurant Aarau GmbH",
-      phone: "+41 44 326 34 27",
-      locationName: "Vista Cowork Spot",
-      address: "Spitalgasse 96",
-      city: "Aarau",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://vista-cowork-spot-aarau.ch",
-      instagram: "https://www.instagram.com/vista-cowork-spot-aarau",
-      amenities: ["wifi", "wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 30,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "08:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-027-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-027-image-2",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-027-image-3",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-027-review-1",
-          author: "Tom",
-          rating: 4,
-          date: "20.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-027-review-2",
-          author: "Sara",
-          rating: 4,
-          date: "14.04.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-027-review-3",
-          author: "Nina",
-          rating: 5,
-          date: "02.01.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-028",
-    email: "hello@riverside-office-lounge-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Restaurant Neuchâtel GmbH",
-      phone: "+41 41 334 30 28",
-      locationName: "Riverside Office Lounge",
-      address: "Baarerstrasse 31",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://riverside-office-lounge-neuchatel.ch",
-      instagram: "https://www.instagram.com/riverside-office-lounge-neuchatel",
-      amenities: ["wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 32,
-      price: 29,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-028-image-1",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-028-image-2",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-028-image-3",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-029",
-    email: "hello@south-office-lounge-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Restaurant Zürich GmbH",
-      phone: "+41 22 606 49 29",
-      locationName: "South Office Lounge",
-      address: "Rue du Rhône 94",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://south-office-lounge-zuerich.ch",
-      instagram: "https://www.instagram.com/south-office-lounge-zuerich",
-      amenities: ["wc", "power", "wifi"],
-    },
-    hostSetup: {
-      spots: 30,
-      price: 15,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-029-image-1",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-029-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-029-image-3",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Office Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-029-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "08.04.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-030",
-    email: "hello@north-cowork-spot-lugano.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Café Lugano GmbH",
-      phone: "+41 44 121 70 30",
-      locationName: "North Cowork Spot",
-      address: "Marktgasse 40",
-      city: "Lugano",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://north-cowork-spot-lugano.ch",
-      instagram: "https://www.instagram.com/north-cowork-spot-lugano",
-      amenities: ["laptop-zone", "wifi", "wc", "power"],
-    },
-    hostSetup: {
-      spots: 19,
-      price: 12,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-030-image-1",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-030-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-030-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-031",
-    email: "hello@riverside-office-lounge-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Café Neuchâtel GmbH",
-      phone: "+41 31 833 73 31",
-      locationName: "Riverside Office Lounge",
-      address: "Rue du Rhône 120",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://riverside-office-lounge-neuchatel.ch",
-      instagram: "https://www.instagram.com/riverside-office-lounge-neuchatel",
-      amenities: ["wifi", "wc", "power"],
-    },
-    hostSetup: {
-      spots: 35,
-      price: 17,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "08:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-031-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-031-image-2",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-031-image-3",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Office Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-032",
-    email: "hello@north-hub-space-winterthur.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Café Winterthur GmbH",
-      phone: "+41 22 968 92 32",
-      locationName: "North Hub Space",
-      address: "Bahnhofstrasse 60",
-      city: "Winterthur",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://north-hub-space-winterthur.ch",
-      instagram: "https://www.instagram.com/north-hub-space-winterthur",
-      amenities: ["wifi", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 35,
-      price: 9,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-032-image-1",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-032-image-2",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-032-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-032-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "28.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-032-review-2",
-          author: "Sara",
-          rating: 5,
-          date: "01.04.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-033",
-    email: "hello@north-work-lounge-aarau.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Restaurant Aarau GmbH",
-      phone: "+41 91 253 82 33",
-      locationName: "North Work Lounge",
-      address: "Bahnhofstrasse 52",
-      city: "Aarau",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://north-work-lounge-aarau.ch",
-      instagram: "https://www.instagram.com/north-work-lounge-aarau",
-      amenities: ["laptop-zone", "wc", "wifi", "power"],
-    },
-    hostSetup: {
-      spots: 36,
-      price: 13,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-033-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-033-image-2",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-033-image-3",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-033-review-1",
-          author: "Sofia",
-          rating: 4,
-          date: "19.04.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-034",
-    email: "hello@urban-desk-club-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Café Zürich GmbH",
-      phone: "+41 52 981 57 34",
-      locationName: "Urban Desk Club",
-      address: "Marktgasse 55",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://urban-desk-club-zuerich.ch",
-      instagram: "https://www.instagram.com/urban-desk-club-zuerich",
-      amenities: ["laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 7,
-      price: 29,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-034-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-034-image-2",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-034-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-035",
-    email: "hello@metro-office-lounge-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Bar St. Gallen AG",
-      phone: "+41 22 452 39 35",
-      locationName: "Metro Office Lounge",
-      address: "Langstrasse 23",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://metro-office-lounge-st-gallen.ch",
-      instagram: "https://www.instagram.com/metro-office-lounge-st-gallen",
-      amenities: ["wc", "power", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 18,
-      price: 12,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-035-image-1",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-035-image-2",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-035-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Office Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-035-review-1",
           author: "David",
-          rating: 4,
-          date: "24.04.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-035-review-2",
-          author: "Sofia",
-          rating: 4,
-          date: "14.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-036",
-    email: "hello@urban-desk-club-winterthur.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Bar Winterthur AG",
-      phone: "+41 44 226 42 36",
-      locationName: "Urban Desk Club",
-      address: "Bahnhofstrasse 120",
-      city: "Winterthur",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://urban-desk-club-winterthur.ch",
-      instagram: "https://www.instagram.com/urban-desk-club-winterthur",
-      amenities: ["power", "laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 15,
-      price: 26,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-036-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-036-image-2",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-036-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-036-review-1",
-          author: "Luca",
-          rating: 4,
-          date: "23.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-036-review-2",
-          author: "Marco",
-          rating: 5,
-          date: "03.01.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-037",
-    email: "hello@metro-desk-house-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Lounge Neuchâtel AG",
-      phone: "+41 91 976 33 37",
-      locationName: "Metro Desk House",
-      address: "Hardstrasse 109",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://metro-desk-house-neuchatel.ch",
-      instagram: "https://www.instagram.com/metro-desk-house-neuchatel",
-      amenities: ["wifi", "wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 18,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-037-image-1",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Desk House Bild 1",
-        },
-        {
-          id: "seed-host-037-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Desk House Bild 2",
-        },
-        {
-          id: "seed-host-037-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Desk House Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-038",
-    email: "hello@urban-desk-club-lugano.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Bar Lugano AG",
-      phone: "+41 44 451 62 38",
-      locationName: "Urban Desk Club",
-      address: "Bahnhofstrasse 59",
-      city: "Lugano",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://urban-desk-club-lugano.ch",
-      instagram: "https://www.instagram.com/urban-desk-club-lugano",
-      amenities: ["power", "wc", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 11,
-      price: 10,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-038-image-1",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-038-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-038-image-3",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-038-review-1",
-          author: "Luca",
-          rating: 4,
-          date: "05.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-038-review-2",
-          author: "Lena",
-          rating: 5,
-          date: "12.03.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-039",
-    email: "hello@alpine-desk-club-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Café Zug GmbH",
-      phone: "+41 52 684 93 39",
-      locationName: "Alpine Desk Club",
-      address: "Marktgasse 61",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://alpine-desk-club-zug.ch",
-      instagram: "https://www.instagram.com/alpine-desk-club-zug",
-      amenities: ["power", "wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 34,
-      price: 24,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-039-image-1",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-039-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-039-image-3",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-039-review-1",
-          author: "Tom",
-          rating: 4,
-          date: "05.03.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-040",
-    email: "hello@south-work-lounge-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Zug GmbH",
-      phone: "+41 41 407 38 40",
-      locationName: "South Work Lounge",
-      address: "Bahnhofstrasse 38",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://south-work-lounge-zug.ch",
-      instagram: "https://www.instagram.com/south-work-lounge-zug",
-      amenities: ["laptop-zone", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 32,
-      price: 11,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-040-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-040-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-040-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Work Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-041",
-    email: "hello@pulse-office-lounge-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Lounge Zürich AG",
-      phone: "+41 31 693 69 41",
-      locationName: "Pulse Office Lounge",
-      address: "Seefeldstrasse 24",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://pulse-office-lounge-zuerich.ch",
-      instagram: "https://www.instagram.com/pulse-office-lounge-zuerich",
-      amenities: ["wc", "power", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 15,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-041-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-041-image-2",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-041-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Office Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-042",
-    email: "hello@pulse-work-lounge-aarau.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Aarau GmbH",
-      phone: "+41 44 548 25 42",
-      locationName: "Pulse Work Lounge",
-      address: "Hardstrasse 2",
-      city: "Aarau",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://pulse-work-lounge-aarau.ch",
-      instagram: "https://www.instagram.com/pulse-work-lounge-aarau",
-      amenities: ["wifi", "wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 12,
-      price: 24,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-042-image-1",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-042-image-2",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-042-image-3",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-042-review-1",
-          author: "Jan",
-          rating: 4,
-          date: "16.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-042-review-2",
-          author: "Lena",
-          rating: 5,
-          date: "11.04.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-043",
-    email: "hello@metro-dayspace-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Café Neuchâtel GmbH",
-      phone: "+41 44 279 37 43",
-      locationName: "Metro Dayspace",
-      address: "Baarerstrasse 16",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://metro-dayspace-neuchatel.ch",
-      instagram: "https://www.instagram.com/metro-dayspace-neuchatel",
-      amenities: ["laptop-zone", "power", "wc"],
-    },
-    hostSetup: {
-      spots: 31,
-      price: 17,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "09:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-043-image-1",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Dayspace Bild 1",
-        },
-        {
-          id: "seed-host-043-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Dayspace Bild 2",
-        },
-        {
-          id: "seed-host-043-image-3",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Dayspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-044",
-    email: "hello@lake-studio-desk-winterthur.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Lake Lounge Winterthur AG",
-      phone: "+41 71 114 15 44",
-      locationName: "Lake Studio Desk",
-      address: "Clarastrasse 101",
-      city: "Winterthur",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://lake-studio-desk-winterthur.ch",
-      instagram: "https://www.instagram.com/lake-studio-desk-winterthur",
-      amenities: ["wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 26,
-      price: 13,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-044-image-1",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-044-image-2",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-044-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Studio Desk Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-045",
-    email: "hello@north-desk-house-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Bar St. Gallen AG",
-      phone: "+41 44 172 11 45",
-      locationName: "North Desk House",
-      address: "Josefstrasse 50",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://north-desk-house-st-gallen.ch",
-      instagram: "https://www.instagram.com/north-desk-house-st-gallen",
-      amenities: ["power", "wifi", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 18,
-      price: 28,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-045-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk House Bild 1",
-        },
-        {
-          id: "seed-host-045-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk House Bild 2",
-        },
-        {
-          id: "seed-host-045-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-045-review-1",
-          author: "David",
-          rating: 5,
-          date: "15.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-045-review-2",
-          author: "David",
-          rating: 5,
-          date: "10.02.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-046",
-    email: "hello@south-dayspace-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Zürich GmbH",
-      phone: "+41 41 848 42 46",
-      locationName: "South Dayspace",
-      address: "Kramgasse 6",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://south-dayspace-zuerich.ch",
-      instagram: "https://www.instagram.com/south-dayspace-zuerich",
-      amenities: ["power", "wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 33,
-      price: 17,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-046-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 1",
-        },
-        {
-          id: "seed-host-046-image-2",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 2",
-        },
-        {
-          id: "seed-host-046-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-047",
-    email: "hello@vista-lab-workspace-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Bar Neuchâtel AG",
-      phone: "+41 22 294 22 47",
-      locationName: "Vista Lab Workspace",
-      address: "Kramgasse 59",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://vista-lab-workspace-neuchatel.ch",
-      instagram: "https://www.instagram.com/vista-lab-workspace-neuchatel",
-      amenities: ["laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 33,
-      price: 20,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "10:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-047-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-047-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-047-image-3",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-048",
-    email: "hello@south-desk-house-lugano.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Bar Lugano AG",
-      phone: "+41 71 836 31 48",
-      locationName: "South Desk House",
-      address: "Kramgasse 104",
-      city: "Lugano",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://south-desk-house-lugano.ch",
-      instagram: "https://www.instagram.com/south-desk-house-lugano",
-      amenities: ["laptop-zone", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 13,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-048-image-1",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 1",
-        },
-        {
-          id: "seed-host-048-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 2",
-        },
-        {
-          id: "seed-host-048-image-3",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-048-review-1",
-          author: "Sara",
-          rating: 5,
-          date: "03.01.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-048-review-2",
-          author: "Lena",
-          rating: 5,
-          date: "03.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-049",
-    email: "hello@loft-work-lounge-winterthur.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Loft Restaurant Winterthur GmbH",
-      phone: "+41 41 534 56 49",
-      locationName: "Loft Work Lounge",
-      address: "Spitalgasse 57",
-      city: "Winterthur",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://loft-work-lounge-winterthur.ch",
-      instagram: "https://www.instagram.com/loft-work-lounge-winterthur",
-      amenities: ["wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 25,
-      price: 22,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-049-image-1",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-049-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-049-image-3",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-049-review-1",
-          author: "Jan",
-          rating: 4,
-          date: "20.03.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-050",
-    email: "hello@metro-work-lounge-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Bar Neuchâtel AG",
-      phone: "+41 52 698 16 50",
-      locationName: "Metro Work Lounge",
-      address: "Clarastrasse 98",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://metro-work-lounge-neuchatel.ch",
-      instagram: "https://www.instagram.com/metro-work-lounge-neuchatel",
-      amenities: ["laptop-zone", "wifi", "wc", "power"],
-    },
-    hostSetup: {
-      spots: 15,
-      price: 21,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-050-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-050-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-050-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-050-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "12.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-051",
-    email: "hello@riverside-lab-workspace-aarau.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Riverside Bar Aarau AG",
-      phone: "+41 91 973 97 51",
-      locationName: "Riverside Lab Workspace",
-      address: "Clarastrasse 64",
-      city: "Aarau",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://riverside-lab-workspace-aarau.ch",
-      instagram: "https://www.instagram.com/riverside-lab-workspace-aarau",
-      amenities: ["power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 8,
-      price: 29,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-051-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-051-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-051-image-3",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-051-review-1",
-          author: "Sofia",
-          rating: 4,
-          date: "26.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-052",
-    email: "hello@pulse-cowork-spot-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Lausanne GmbH",
-      phone: "+41 31 590 66 52",
-      locationName: "Pulse Cowork Spot",
-      address: "Langstrasse 8",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://pulse-cowork-spot-lausanne.ch",
-      instagram: "https://www.instagram.com/pulse-cowork-spot-lausanne",
-      amenities: ["power", "wifi", "wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 10,
-      price: 9,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-052-image-1",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-052-image-2",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-052-image-3",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-052-review-1",
-          author: "Sara",
-          rating: 4,
-          date: "19.04.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-052-review-2",
-          author: "Mila",
-          rating: 4,
-          date: "09.02.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-053",
-    email: "hello@studio-studio-desk-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Bar Lausanne AG",
-      phone: "+41 91 178 58 53",
-      locationName: "Studio Studio Desk",
-      address: "Rue du Rhône 95",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://studio-studio-desk-lausanne.ch",
-      instagram: "https://www.instagram.com/studio-studio-desk-lausanne",
-      amenities: ["laptop-zone", "power", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 34,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-053-image-1",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-053-image-2",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-053-image-3",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-053-review-1",
-          author: "Sara",
-          rating: 4,
-          date: "26.04.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-053-review-2",
-          author: "David",
-          rating: 4,
-          date: "07.04.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-054",
-    email: "hello@urban-workspace-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Basel GmbH",
-      phone: "+41 52 513 42 54",
-      locationName: "Urban Workspace",
-      address: "Clarastrasse 99",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://urban-workspace-basel.ch",
-      instagram: "https://www.instagram.com/urban-workspace-basel",
-      amenities: ["wc", "power", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 17,
-      price: 15,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-054-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Workspace Bild 1",
-        },
-        {
-          id: "seed-host-054-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Workspace Bild 2",
-        },
-        {
-          id: "seed-host-054-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-054-review-1",
-          author: "Marco",
-          rating: 5,
-          date: "09.02.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-055",
-    email: "hello@south-dayspace-bern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Lounge Bern AG",
-      phone: "+41 44 825 35 55",
-      locationName: "South Dayspace",
-      address: "Pilatusstrasse 30",
-      city: "Bern",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://south-dayspace-bern.ch",
-      instagram: "https://www.instagram.com/south-dayspace-bern",
-      amenities: ["power", "laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 13,
-      price: 29,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "09:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-055-image-1",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 1",
-        },
-        {
-          id: "seed-host-055-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 2",
-        },
-        {
-          id: "seed-host-055-image-3",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Dayspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-056",
-    email: "hello@loft-workspace-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Loft Café St. Gallen GmbH",
-      phone: "+41 61 279 99 56",
-      locationName: "Loft Workspace",
-      address: "Marktgasse 102",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://loft-workspace-st-gallen.ch",
-      instagram: "https://www.instagram.com/loft-workspace-st-gallen",
-      amenities: ["wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 7,
-      price: 9,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-056-image-1",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Workspace Bild 1",
-        },
-        {
-          id: "seed-host-056-image-2",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Workspace Bild 2",
-        },
-        {
-          id: "seed-host-056-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-056-review-1",
-          author: "Sara",
-          rating: 5,
-          date: "17.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-057",
-    email: "hello@alpine-hub-space-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Lounge Neuchâtel AG",
-      phone: "+41 21 403 34 57",
-      locationName: "Alpine Hub Space",
-      address: "Hardstrasse 45",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://alpine-hub-space-neuchatel.ch",
-      instagram: "https://www.instagram.com/alpine-hub-space-neuchatel",
-      amenities: ["wc", "laptop-zone", "power", "wifi"],
-    },
-    hostSetup: {
-      spots: 21,
-      price: 20,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "08:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-057-image-1",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-057-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-057-image-3",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-057-review-1",
-          author: "Tom",
-          rating: 4,
-          date: "06.02.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-        {
-          id: "seed-host-057-review-2",
-          author: "Tom",
-          rating: 4,
-          date: "13.03.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-057-review-3",
-          author: "Lena",
-          rating: 4,
-          date: "23.03.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-058",
-    email: "hello@pulse-desk-house-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse St. Gallen GmbH",
-      phone: "+41 41 558 49 58",
-      locationName: "Pulse Desk House",
-      address: "Bahnhofstrasse 114",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://pulse-desk-house-st-gallen.ch",
-      instagram: "https://www.instagram.com/pulse-desk-house-st-gallen",
-      amenities: ["power", "laptop-zone", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 35,
-      price: 25,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-058-image-1",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 1",
-        },
-        {
-          id: "seed-host-058-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 2",
-        },
-        {
-          id: "seed-host-058-image-3",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-058-review-1",
-          author: "Lena",
-          rating: 4,
-          date: "01.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-058-review-2",
-          author: "Noah",
-          rating: 4,
-          date: "19.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-058-review-3",
-          author: "Nina",
-          rating: 4,
-          date: "14.01.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-059",
-    email: "hello@urban-lab-workspace-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Café St. Gallen GmbH",
-      phone: "+41 22 984 86 59",
-      locationName: "Urban Lab Workspace",
-      address: "Seefeldstrasse 46",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://urban-lab-workspace-st-gallen.ch",
-      instagram: "https://www.instagram.com/urban-lab-workspace-st-gallen",
-      amenities: ["wc", "wifi", "power"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 28,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-059-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-059-image-2",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-059-image-3",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-059-review-1",
-          author: "David",
-          rating: 5,
-          date: "14.02.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-060",
-    email: "hello@alpine-desk-house-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Lounge Lausanne AG",
-      phone: "+41 61 595 65 60",
-      locationName: "Alpine Desk House",
-      address: "Langstrasse 34",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://alpine-desk-house-lausanne.ch",
-      instagram: "https://www.instagram.com/alpine-desk-house-lausanne",
-      amenities: ["power", "wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 21,
-      price: 14,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-060-image-1",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk House Bild 1",
-        },
-        {
-          id: "seed-host-060-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk House Bild 2",
-        },
-        {
-          id: "seed-host-060-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-060-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "18.04.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-060-review-2",
-          author: "Sara",
-          rating: 4,
-          date: "10.03.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-061",
-    email: "hello@south-workspace-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Lounge Zug AG",
-      phone: "+41 31 409 75 61",
-      locationName: "South Workspace",
-      address: "Seefeldstrasse 65",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://south-workspace-zug.ch",
-      instagram: "https://www.instagram.com/south-workspace-zug",
-      amenities: ["wc", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 27,
-      price: 16,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-061-image-1",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Workspace Bild 1",
-        },
-        {
-          id: "seed-host-061-image-2",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Workspace Bild 2",
-        },
-        {
-          id: "seed-host-061-image-3",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-062",
-    email: "hello@vista-desk-house-geneve.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Lounge Genève AG",
-      phone: "+41 71 276 56 62",
-      locationName: "Vista Desk House",
-      address: "Baarerstrasse 4",
-      city: "Genève",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://vista-desk-house-geneve.ch",
-      instagram: "https://www.instagram.com/vista-desk-house-geneve",
-      amenities: ["wifi", "laptop-zone", "power", "wc"],
-    },
-    hostSetup: {
-      spots: 12,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-062-image-1",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 1",
-        },
-        {
-          id: "seed-host-062-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 2",
-        },
-        {
-          id: "seed-host-062-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-063",
-    email: "hello@pulse-desk-club-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Café Neuchâtel GmbH",
-      phone: "+41 22 715 21 63",
-      locationName: "Pulse Desk Club",
-      address: "Baarerstrasse 94",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://pulse-desk-club-neuchatel.ch",
-      instagram: "https://www.instagram.com/pulse-desk-club-neuchatel",
-      amenities: ["power", "wc"],
-    },
-    hostSetup: {
-      spots: 29,
-      price: 19,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-063-image-1",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-063-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-063-image-3",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-063-review-1",
-          author: "Tom",
-          rating: 5,
-          date: "21.03.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-        {
-          id: "seed-host-063-review-2",
-          author: "Noah",
-          rating: 5,
-          date: "12.02.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-063-review-3",
-          author: "Luca",
-          rating: 5,
-          date: "05.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-064",
-    email: "hello@metro-lab-workspace-luzern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Bar Luzern AG",
-      phone: "+41 21 382 65 64",
-      locationName: "Metro Lab Workspace",
-      address: "Langstrasse 27",
-      city: "Luzern",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://metro-lab-workspace-luzern.ch",
-      instagram: "https://www.instagram.com/metro-lab-workspace-luzern",
-      amenities: ["wc", "laptop-zone", "wifi", "power"],
-    },
-    hostSetup: {
-      spots: 23,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "09:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-064-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-064-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-064-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-065",
-    email: "hello@dock-workspace-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Dock Bar St. Gallen AG",
-      phone: "+41 91 599 19 65",
-      locationName: "Dock Workspace",
-      address: "Spitalgasse 113",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://dock-workspace-st-gallen.ch",
-      instagram: "https://www.instagram.com/dock-workspace-st-gallen",
-      amenities: ["wifi", "laptop-zone", "power", "wc"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 10,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-065-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Workspace Bild 1",
-        },
-        {
-          id: "seed-host-065-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Workspace Bild 2",
-        },
-        {
-          id: "seed-host-065-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-065-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "13.04.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-066",
-    email: "hello@loft-lab-workspace-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Loft Zug GmbH",
-      phone: "+41 61 499 78 66",
-      locationName: "Loft Lab Workspace",
-      address: "Marktgasse 25",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://loft-lab-workspace-zug.ch",
-      instagram: "https://www.instagram.com/loft-lab-workspace-zug",
-      amenities: ["wifi", "wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 30,
-      price: 25,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-066-image-1",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-066-image-2",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-066-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-066-review-1",
-          author: "Sofia",
-          rating: 4,
-          date: "18.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-066-review-2",
-          author: "Noah",
-          rating: 5,
-          date: "14.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-066-review-3",
-          author: "Lena",
-          rating: 5,
-          date: "13.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-067",
-    email: "hello@studio-cowork-spot-zug.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Zug GmbH",
-      phone: "+41 21 192 57 67",
-      locationName: "Studio Cowork Spot",
-      address: "Spitalgasse 26",
-      city: "Zug",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://studio-cowork-spot-zug.ch",
-      instagram: "https://www.instagram.com/studio-cowork-spot-zug",
-      amenities: ["wc", "power", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 12,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-067-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-067-image-2",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-067-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-068",
-    email: "hello@dock-hub-space-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Dock Lounge St. Gallen AG",
-      phone: "+41 44 212 97 68",
-      locationName: "Dock Hub Space",
-      address: "Josefstrasse 76",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://dock-hub-space-st-gallen.ch",
-      instagram: "https://www.instagram.com/dock-hub-space-st-gallen",
-      amenities: ["wifi", "laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 27,
-      price: 13,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-068-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-068-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-068-image-3",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Dock Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-068-review-1",
-          author: "Mila",
-          rating: 4,
-          date: "23.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-068-review-2",
-          author: "Tom",
-          rating: 4,
-          date: "21.04.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-068-review-3",
-          author: "Tom",
-          rating: 5,
-          date: "25.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-069",
-    email: "hello@alpine-hub-space-aarau.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Café Aarau GmbH",
-      phone: "+41 44 322 37 69",
-      locationName: "Alpine Hub Space",
-      address: "Kramgasse 80",
-      city: "Aarau",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://alpine-hub-space-aarau.ch",
-      instagram: "https://www.instagram.com/alpine-hub-space-aarau",
-      amenities: ["wifi", "laptop-zone", "wc", "power"],
-    },
-    hostSetup: {
-      spots: 32,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-069-image-1",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-069-image-2",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-069-image-3",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-069-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "01.04.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-        {
-          id: "seed-host-069-review-2",
-          author: "Sofia",
-          rating: 4,
-          date: "28.03.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-069-review-3",
-          author: "Lena",
-          rating: 4,
-          date: "04.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-070",
-    email: "hello@vista-desk-club-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Café Basel GmbH",
-      phone: "+41 91 576 60 70",
-      locationName: "Vista Desk Club",
-      address: "Langstrasse 82",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://vista-desk-club-basel.ch",
-      instagram: "https://www.instagram.com/vista-desk-club-basel",
-      amenities: ["power", "wc"],
-    },
-    hostSetup: {
-      spots: 23,
-      price: 21,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-070-image-1",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-070-image-2",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-070-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-071",
-    email: "hello@studio-desk-club-bern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Bar Bern AG",
-      phone: "+41 61 318 89 71",
-      locationName: "Studio Desk Club",
-      address: "Bahnhofstrasse 10",
-      city: "Bern",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://studio-desk-club-bern.ch",
-      instagram: "https://www.instagram.com/studio-desk-club-bern",
-      amenities: ["wifi", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 23,
-      price: 28,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-071-image-1",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-071-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-071-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-071-review-1",
-          author: "Luca",
-          rating: 5,
-          date: "25.01.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-071-review-2",
-          author: "Marco",
-          rating: 4,
-          date: "03.03.2026",
-          text: "Würde ich jederzeit wieder buchen.",
-        },
-        {
-          id: "seed-host-071-review-3",
-          author: "Luca",
-          rating: 5,
-          date: "13.04.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-072",
-    email: "hello@pulse-lab-workspace-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Restaurant Basel GmbH",
-      phone: "+41 22 834 78 72",
-      locationName: "Pulse Lab Workspace",
-      address: "Josefstrasse 55",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://pulse-lab-workspace-basel.ch",
-      instagram: "https://www.instagram.com/pulse-lab-workspace-basel",
-      amenities: ["wifi", "laptop-zone", "power"],
-    },
-    hostSetup: {
-      spots: 26,
-      price: 12,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-072-image-1",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-072-image-2",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-072-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-072-review-1",
-          author: "Luca",
-          rating: 4,
-          date: "22.02.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-073",
-    email: "hello@pulse-desk-house-luzern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Pulse Luzern GmbH",
-      phone: "+41 22 400 98 73",
-      locationName: "Pulse Desk House",
-      address: "Spitalgasse 91",
-      city: "Luzern",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://pulse-desk-house-luzern.ch",
-      instagram: "https://www.instagram.com/pulse-desk-house-luzern",
-      amenities: ["wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 6,
-      price: 10,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "10:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-073-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 1",
-        },
-        {
-          id: "seed-host-073-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 2",
-        },
-        {
-          id: "seed-host-073-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Desk House Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-074",
-    email: "hello@studio-desk-house-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Lounge Basel AG",
-      phone: "+41 44 843 30 74",
-      locationName: "Studio Desk House",
-      address: "Pilatusstrasse 102",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://studio-desk-house-basel.ch",
-      instagram: "https://www.instagram.com/studio-desk-house-basel",
-      amenities: ["wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 30,
-      price: 26,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-074-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk House Bild 1",
-        },
-        {
-          id: "seed-host-074-image-2",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk House Bild 2",
-        },
-        {
-          id: "seed-host-074-image-3",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-074-review-1",
-          author: "Noah",
-          rating: 5,
-          date: "09.03.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-075",
-    email: "hello@north-studio-desk-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Bar Zürich AG",
-      phone: "+41 61 168 16 75",
-      locationName: "North Studio Desk",
-      address: "Baarerstrasse 97",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://north-studio-desk-zuerich.ch",
-      instagram: "https://www.instagram.com/north-studio-desk-zuerich",
-      amenities: ["laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 12,
-      price: 25,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-075-image-1",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-075-image-2",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-075-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-075-review-1",
-          author: "Marco",
-          rating: 5,
-          date: "28.04.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-076",
-    email: "hello@loft-hub-space-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Loft Restaurant St. Gallen GmbH",
-      phone: "+41 52 274 82 76",
-      locationName: "Loft Hub Space",
-      address: "Rue du Rhône 31",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://loft-hub-space-st-gallen.ch",
-      instagram: "https://www.instagram.com/loft-hub-space-st-gallen",
-      amenities: ["power", "wc"],
-    },
-    hostSetup: {
-      spots: 6,
-      price: 13,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-076-image-1",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-076-image-2",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-076-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Loft Hub Space Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-077",
-    email: "hello@metro-work-lounge-luzern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Restaurant Luzern GmbH",
-      phone: "+41 61 335 36 77",
-      locationName: "Metro Work Lounge",
-      address: "Kramgasse 71",
-      city: "Luzern",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://metro-work-lounge-luzern.ch",
-      instagram: "https://www.instagram.com/metro-work-lounge-luzern",
-      amenities: ["power", "wifi", "wc"],
-    },
-    hostSetup: {
-      spots: 7,
-      price: 24,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-077-image-1",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-077-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-077-image-3",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-077-review-1",
-          author: "Lena",
-          rating: 4,
-          date: "28.04.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-078",
-    email: "hello@lake-desk-house-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Lake Basel GmbH",
-      phone: "+41 22 710 22 78",
-      locationName: "Lake Desk House",
-      address: "Spitalgasse 115",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://lake-desk-house-basel.ch",
-      instagram: "https://www.instagram.com/lake-desk-house-basel",
-      amenities: ["power", "wifi", "wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 13,
-      price: 23,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "08:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-078-image-1",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 1",
-        },
-        {
-          id: "seed-host-078-image-2",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 2",
-        },
-        {
-          id: "seed-host-078-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Desk House Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-078-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "20.01.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-079",
-    email: "hello@north-studio-desk-lugano.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "North Restaurant Lugano GmbH",
-      phone: "+41 22 852 49 79",
-      locationName: "North Studio Desk",
-      address: "Pilatusstrasse 22",
-      city: "Lugano",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://north-studio-desk-lugano.ch",
-      instagram: "https://www.instagram.com/north-studio-desk-lugano",
-      amenities: ["wifi", "wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 21,
-      price: 27,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-079-image-1",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-079-image-2",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-079-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-079-review-1",
-          author: "David",
-          rating: 5,
-          date: "10.04.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-079-review-2",
-          author: "Lena",
-          rating: 5,
-          date: "25.02.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-080",
-    email: "hello@studio-workspace-luzern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Bar Luzern AG",
-      phone: "+41 91 248 41 80",
-      locationName: "Studio Workspace",
-      address: "Bahnhofstrasse 47",
-      city: "Luzern",
-    },
-    hostLocation: {
-      category: "bar",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://studio-workspace-luzern.ch",
-      instagram: "https://www.instagram.com/studio-workspace-luzern",
-      amenities: ["wc", "laptop-zone", "power"],
-    },
-    hostSetup: {
-      spots: 12,
-      price: 24,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-080-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Workspace Bild 1",
-        },
-        {
-          id: "seed-host-080-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Workspace Bild 2",
-        },
-        {
-          id: "seed-host-080-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-081",
-    email: "hello@vista-desk-club-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Restaurant Basel GmbH",
-      phone: "+41 44 804 49 81",
-      locationName: "Vista Desk Club",
-      address: "Marktgasse 120",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://vista-desk-club-basel.ch",
-      instagram: "https://www.instagram.com/vista-desk-club-basel",
-      amenities: ["wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 8,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-081-image-1",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 1",
-        },
-        {
-          id: "seed-host-081-image-2",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 2",
-        },
-        {
-          id: "seed-host-081-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk Club Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-081-review-1",
-          author: "Mila",
-          rating: 5,
-          date: "03.02.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-082",
-    email: "hello@metro-workspace-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Restaurant Neuchâtel GmbH",
-      phone: "+41 91 486 42 82",
-      locationName: "Metro Workspace",
-      address: "Baarerstrasse 86",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://metro-workspace-neuchatel.ch",
-      instagram: "https://www.instagram.com/metro-workspace-neuchatel",
-      amenities: ["power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 6,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "08:00",
-      to: "20:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-082-image-1",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Workspace Bild 1",
-        },
-        {
-          id: "seed-host-082-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Workspace Bild 2",
-        },
-        {
-          id: "seed-host-082-image-3",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-083",
-    email: "hello@lake-work-lounge-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Lake Basel GmbH",
-      phone: "+41 91 221 72 83",
-      locationName: "Lake Work Lounge",
-      address: "Hardstrasse 73",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://lake-work-lounge-basel.ch",
-      instagram: "https://www.instagram.com/lake-work-lounge-basel",
-      amenities: ["wc", "laptop-zone", "wifi"],
-    },
-    hostSetup: {
-      spots: 7,
-      price: 10,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "10:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-083-image-1",
-          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-083-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-083-image-3",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Lake Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-083-review-1",
-          author: "Nina",
-          rating: 4,
-          date: "04.02.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
-        },
-        {
-          id: "seed-host-083-review-2",
-          author: "Jan",
-          rating: 5,
-          date: "20.03.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-083-review-3",
-          author: "Sofia",
-          rating: 5,
-          date: "01.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-084",
-    email: "hello@vista-studio-desk-lausanne.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Lausanne GmbH",
-      phone: "+41 21 983 79 84",
-      locationName: "Vista Studio Desk",
-      address: "Langstrasse 109",
-      city: "Lausanne",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://vista-studio-desk-lausanne.ch",
-      instagram: "https://www.instagram.com/vista-studio-desk-lausanne",
-      amenities: ["power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 23,
-      price: 17,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-084-image-1",
-          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 1",
-        },
-        {
-          id: "seed-host-084-image-2",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 2",
-        },
-        {
-          id: "seed-host-084-image-3",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Studio Desk Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-084-review-1",
-          author: "Noah",
-          rating: 5,
-          date: "02.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-        {
-          id: "seed-host-084-review-2",
-          author: "Marco",
-          rating: 5,
-          date: "05.03.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-085",
-    email: "hello@south-cowork-spot-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Lounge Basel AG",
-      phone: "+41 44 792 91 85",
-      locationName: "South Cowork Spot",
-      address: "Pilatusstrasse 4",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://south-cowork-spot-basel.ch",
-      instagram: "https://www.instagram.com/south-cowork-spot-basel",
-      amenities: ["wc", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 19,
-      price: 24,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "07:00",
-      to: "19:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-085-image-1",
-          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 1",
-        },
-        {
-          id: "seed-host-085-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 2",
-        },
-        {
-          id: "seed-host-085-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Cowork Spot Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-085-review-1",
-          author: "Noah",
-          rating: 4,
-          date: "26.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-086",
-    email: "hello@vista-workspace-winterthur.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Lounge Winterthur AG",
-      phone: "+41 52 445 61 86",
-      locationName: "Vista Workspace",
-      address: "Clarastrasse 32",
-      city: "Winterthur",
-    },
-    hostLocation: {
-      category: "hotel-lounge",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://vista-workspace-winterthur.ch",
-      instagram: "https://www.instagram.com/vista-workspace-winterthur",
-      amenities: ["laptop-zone", "wifi", "power", "wc"],
-    },
-    hostSetup: {
-      spots: 12,
-      price: 30,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 5,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-086-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Workspace Bild 1",
-        },
-        {
-          id: "seed-host-086-image-2",
-          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Workspace Bild 2",
-        },
-        {
-          id: "seed-host-086-image-3",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-086-review-1",
-          author: "Luca",
-          rating: 4,
-          date: "01.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-086-review-2",
-          author: "Sara",
-          rating: 5,
-          date: "10.02.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-087",
-    email: "hello@metro-lab-workspace-bern.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Metro Bern GmbH",
-      phone: "+41 91 938 30 87",
-      locationName: "Metro Lab Workspace",
-      address: "Baarerstrasse 117",
-      city: "Bern",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://metro-lab-workspace-bern.ch",
-      instagram: "https://www.instagram.com/metro-lab-workspace-bern",
-      amenities: ["wc", "laptop-zone", "power"],
-    },
-    hostSetup: {
-      spots: 21,
-      price: 32,
-      marked: false,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-087-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-087-image-2",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-087-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Metro Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-088",
-    email: "hello@urban-hub-space-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban Restaurant St. Gallen GmbH",
-      phone: "+41 22 517 57 88",
-      locationName: "Urban Hub Space",
-      address: "Baarerstrasse 60",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://urban-hub-space-st-gallen.ch",
-      instagram: "https://www.instagram.com/urban-hub-space-st-gallen",
-      amenities: ["wifi", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 32,
-      price: 27,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed"],
-      from: "07:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-088-image-1",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-088-image-2",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-088-image-3",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-088-review-1",
-          author: "Tom",
-          rating: 5,
-          date: "04.01.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-        {
-          id: "seed-host-088-review-2",
-          author: "Mila",
-          rating: 5,
-          date: "09.02.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-089",
-    email: "hello@studio-lab-workspace-zuerich.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Studio Zürich GmbH",
-      phone: "+41 31 981 59 89",
-      locationName: "Studio Lab Workspace",
-      address: "Hardstrasse 30",
-      city: "Zürich",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://studio-lab-workspace-zuerich.ch",
-      instagram: "https://www.instagram.com/studio-lab-workspace-zuerich",
-      amenities: ["power", "wifi"],
-    },
-    hostSetup: {
-      spots: 29,
-      price: 28,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "10:00",
-      to: "17:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-089-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Lab Workspace Bild 1",
-        },
-        {
-          id: "seed-host-089-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-089-image-3",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Studio Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-089-review-1",
-          author: "Sofia",
-          rating: 5,
-          date: "23.03.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-        {
-          id: "seed-host-089-review-2",
-          author: "Sara",
-          rating: 4,
-          date: "26.01.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
-        },
-        {
-          id: "seed-host-089-review-3",
-          author: "Lena",
-          rating: 5,
-          date: "27.02.2026",
-          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-090",
-    email: "hello@alpine-office-lounge-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Restaurant St. Gallen GmbH",
-      phone: "+41 31 369 36 90",
-      locationName: "Alpine Office Lounge",
-      address: "Kramgasse 24",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://alpine-office-lounge-st-gallen.ch",
-      instagram: "https://www.instagram.com/alpine-office-lounge-st-gallen",
-      amenities: ["wifi", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 20,
-      price: 17,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-090-image-1",
-          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 1",
-        },
-        {
-          id: "seed-host-090-image-2",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 2",
-        },
-        {
-          id: "seed-host-090-image-3",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-091",
-    email: "hello@alpine-work-lounge-geneve.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Alpine Restaurant Genève GmbH",
-      phone: "+41 21 827 33 91",
-      locationName: "Alpine Work Lounge",
-      address: "Josefstrasse 98",
-      city: "Genève",
-    },
-    hostLocation: {
-      category: "restaurant",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://alpine-work-lounge-geneve.ch",
-      instagram: "https://www.instagram.com/alpine-work-lounge-geneve",
-      amenities: ["laptop-zone", "wc"],
-    },
-    hostSetup: {
-      spots: 25,
-      price: 16,
-      marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "4h",
-    },
-    hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri"],
-      from: "08:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-091-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Work Lounge Bild 1",
-        },
-        {
-          id: "seed-host-091-image-2",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Work Lounge Bild 2",
-        },
-        {
-          id: "seed-host-091-image-3",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Work Lounge Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-091-review-1",
-          author: "Jan",
-          rating: 5,
-          date: "23.02.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-091-review-2",
-          author: "Lena",
-          rating: 4,
-          date: "06.04.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-091-review-3",
-          author: "Nina",
-          rating: 5,
-          date: "03.04.2026",
-          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-092",
-    email: "hello@south-hub-space-neuchatel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "South Neuchâtel GmbH",
-      phone: "+41 44 879 70 92",
-      locationName: "South Hub Space",
-      address: "Spitalgasse 14",
-      city: "Neuchâtel",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
-      website: "https://south-hub-space-neuchatel.ch",
-      instagram: "https://www.instagram.com/south-hub-space-neuchatel",
-      amenities: ["wc", "wifi", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 34,
-      price: 8,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "09:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-092-image-1",
-          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-092-image-2",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-092-image-3",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-092-review-1",
-          author: "Marco",
-          rating: 4,
-          date: "14.02.2026",
-          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
-        },
-        {
-          id: "seed-host-092-review-2",
-          author: "Lena",
-          rating: 4,
-          date: "05.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
-        },
-      ],
-    },
-  },
-
-  {
-    uid: "seed-host-093",
-    email: "hello@urban-hub-space-st-gallen.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Urban St. Gallen GmbH",
-      phone: "+41 22 542 16 93",
-      locationName: "Urban Hub Space",
-      address: "Kramgasse 116",
-      city: "St. Gallen",
-    },
-    hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://urban-hub-space-st-gallen.ch",
-      instagram: "https://www.instagram.com/urban-hub-space-st-gallen",
-      amenities: ["wc", "power", "laptop-zone"],
-    },
-    hostSetup: {
-      spots: 13,
-      price: 21,
-      marked: true,
-      laptopZoneOnly: true,
-      slotDuration: "3h",
-    },
-    hostAvailability: {
-      days: ["thu", "fri", "sat", "sun"],
-      from: "10:00",
-      to: "21:00",
-      recurring: true,
-      gracePeriod: 10,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-093-image-1",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 1",
-        },
-        {
-          id: "seed-host-093-image-2",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 2",
-        },
-        {
-          id: "seed-host-093-image-3",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-          alt: "Urban Hub Space Bild 3",
-        },
-      ],
-      reviews: [
-        {
-          id: "seed-host-093-review-1",
-          author: "Mila",
           rating: 5,
           date: "02.03.2026",
           text: "Top Mischung aus Komfort, WLAN und guter Lage.",
@@ -6317,26 +1299,3449 @@ const hosts: SeedHost[] = [
   },
 
   {
-    uid: "seed-host-094",
-    email: "hello@pulse-lab-workspace-basel.ch",
+    uid: "seed-host-019",
+    email: "hello@vista-hub-space-winterthur.ch",
     avatarUrl: null,
+    createdAt: "2026-02-09T11:17:16.045Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Pulse Bar Basel AG",
-      phone: "+41 31 554 63 94",
-      locationName: "Pulse Lab Workspace",
-      address: "Kramgasse 3",
+      operatorName: "Vista Winterthur GmbH",
+      phone: "+41 41 535 22 19",
+      locationName: "Vista Hub Space",
+      address: "Clarastrasse 2",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://vista-hub-space-winterthur.ch",
+      instagram: "https://www.instagram.com/vista-hub-space-winterthur",
+      amenities: ["wifi", "laptop-zone", "power", "wc"],
+    },
+    hostSetup: {
+      spots: 25,
+      price: 11,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-019-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-019-image-2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-019-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-019-review-1",
+          author: "Elin",
+          rating: 5,
+          date: "20.01.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-019-review-2",
+          author: "Noah",
+          rating: 5,
+          date: "28.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-020",
+    email: "hello@studio-studio-desk-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-17T20:58:56.747Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Lounge Lugano AG",
+      phone: "+41 52 671 27 20",
+      locationName: "Studio Studio Desk",
+      address: "Baarerstrasse 4",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://studio-studio-desk-lugano.ch",
+      instagram: "https://www.instagram.com/studio-studio-desk-lugano",
+      amenities: ["power", "wifi", "wc"],
+    },
+    hostSetup: {
+      spots: 20,
+      price: 19,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-020-image-1",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-020-image-2",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-020-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-020-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "21.04.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-020-review-2",
+          author: "Lena",
+          rating: 5,
+          date: "27.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-021",
+    email: "hello@pulse-studio-desk-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-11T04:49:21.198Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Pulse Bar St. Gallen AG",
+      phone: "+41 21 917 20 21",
+      locationName: "Pulse Studio Desk",
+      address: "Spitalgasse 35",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://pulse-studio-desk-st-gallen.ch",
+      instagram: "https://www.instagram.com/pulse-studio-desk-st-gallen",
+      amenities: ["laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 16,
+      price: 18,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-021-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-021-image-2",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-021-image-3",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-021-review-1",
+          author: "Nina",
+          rating: 5,
+          date: "13.01.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-021-review-2",
+          author: "Elin",
+          rating: 5,
+          date: "03.02.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+        {
+          id: "seed-host-021-review-3",
+          author: "Jan",
+          rating: 4,
+          date: "26.03.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-022",
+    email: "hello@pulse-desk-club-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-25T12:01:15.501Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Pulse Café Winterthur GmbH",
+      phone: "+41 52 560 30 22",
+      locationName: "Pulse Desk Club",
+      address: "Hardstrasse 108",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://pulse-desk-club-winterthur.ch",
+      instagram: "https://www.instagram.com/pulse-desk-club-winterthur",
+      amenities: ["wifi", "power", "laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 16,
+      price: 16,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-022-image-1",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-022-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-022-image-3",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-022-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "07.03.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-022-review-2",
+          author: "Sofia",
+          rating: 4,
+          date: "28.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-023",
+    email: "hello@south-office-lounge-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-21T14:33:29.253Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Lounge Winterthur AG",
+      phone: "+41 21 141 91 23",
+      locationName: "South Office Lounge",
+      address: "Clarastrasse 25",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://south-office-lounge-winterthur.ch",
+      instagram: "https://www.instagram.com/south-office-lounge-winterthur",
+      amenities: ["laptop-zone", "wifi", "wc", "power"],
+    },
+    hostSetup: {
+      spots: 24,
+      price: 12,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-023-image-1",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-023-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-023-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Office Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-023-review-1",
+          author: "Jan",
+          rating: 5,
+          date: "11.01.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-023-review-2",
+          author: "Luca",
+          rating: 5,
+          date: "13.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-024",
+    email: "hello@studio-cowork-spot-basel.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-18T16:39:38.441Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Basel GmbH",
+      phone: "+41 41 979 80 24",
+      locationName: "Studio Cowork Spot",
+      address: "Pilatusstrasse 57",
       city: "Basel",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://studio-cowork-spot-basel.ch",
+      instagram: "https://www.instagram.com/studio-cowork-spot-basel",
+      amenities: ["power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 6,
+      price: 14,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-024-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-024-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-024-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-025",
+    email: "hello@loft-desk-club-basel.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-12T16:45:13.637Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Restaurant Basel GmbH",
+      phone: "+41 31 697 43 25",
+      locationName: "Loft Desk Club",
+      address: "Spitalgasse 74",
+      city: "Basel",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://loft-desk-club-basel.ch",
+      instagram: "https://www.instagram.com/loft-desk-club-basel",
+      amenities: ["laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 27,
+      price: 28,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-025-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-025-image-2",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-025-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-025-review-1",
+          author: "Mila",
+          rating: 5,
+          date: "06.02.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-026",
+    email: "hello@metro-hub-space-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-31T19:06:51.123Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro St. Gallen GmbH",
+      phone: "+41 91 186 65 26",
+      locationName: "Metro Hub Space",
+      address: "Rue du Rhône 90",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://metro-hub-space-st-gallen.ch",
+      instagram: "https://www.instagram.com/metro-hub-space-st-gallen",
+      amenities: ["wc", "laptop-zone", "power", "wifi"],
+    },
+    hostSetup: {
+      spots: 6,
+      price: 27,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "08:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-026-image-1",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-026-image-2",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-026-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-026-review-1",
+          author: "Elin",
+          rating: 4,
+          date: "11.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-026-review-2",
+          author: "Sara",
+          rating: 5,
+          date: "26.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-026-review-3",
+          author: "David",
+          rating: 4,
+          date: "10.02.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-027",
+    email: "hello@south-studio-desk-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-09T03:31:35.815Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Genève GmbH",
+      phone: "+41 41 732 71 27",
+      locationName: "South Studio Desk",
+      address: "Josefstrasse 61",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://south-studio-desk-geneve.ch",
+      instagram: "https://www.instagram.com/south-studio-desk-geneve",
+      amenities: ["wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 27,
+      price: 15,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "07:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-027-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-027-image-2",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-027-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-027-review-1",
+          author: "David",
+          rating: 4,
+          date: "25.04.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-028",
+    email: "hello@pulse-hub-space-bern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-06T09:30:17.223Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Pulse Café Bern GmbH",
+      phone: "+41 71 832 18 28",
+      locationName: "Pulse Hub Space",
+      address: "Kramgasse 93",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://pulse-hub-space-bern.ch",
+      instagram: "https://www.instagram.com/pulse-hub-space-bern",
+      amenities: ["laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 16,
+      price: 25,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-028-image-1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-028-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-028-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Pulse Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-028-review-1",
+          author: "Sara",
+          rating: 5,
+          date: "12.04.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-028-review-2",
+          author: "Jan",
+          rating: 4,
+          date: "07.04.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-029",
+    email: "hello@south-lab-workspace-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-26T13:34:23.212Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Lounge Lausanne AG",
+      phone: "+41 41 111 70 29",
+      locationName: "South Lab Workspace",
+      address: "Spitalgasse 103",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://south-lab-workspace-lausanne.ch",
+      instagram: "https://www.instagram.com/south-lab-workspace-lausanne",
+      amenities: ["laptop-zone", "power", "wc"],
+    },
+    hostSetup: {
+      spots: 29,
+      price: 16,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-029-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-029-image-2",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-029-image-3",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-030",
+    email: "hello@metro-studio-desk-zuerich.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-06T20:08:24.624Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Restaurant Zürich GmbH",
+      phone: "+41 61 399 55 30",
+      locationName: "Metro Studio Desk",
+      address: "Marktgasse 12",
+      city: "Zürich",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://metro-studio-desk-zuerich.ch",
+      instagram: "https://www.instagram.com/metro-studio-desk-zuerich",
+      amenities: ["power", "wifi", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 7,
+      price: 32,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-030-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-030-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-030-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-030-review-1",
+          author: "David",
+          rating: 5,
+          date: "02.03.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-031",
+    email: "hello@north-studio-desk-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-29T20:00:13.894Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "North Lounge St. Gallen AG",
+      phone: "+41 91 376 10 31",
+      locationName: "North Studio Desk",
+      address: "Kramgasse 85",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://north-studio-desk-st-gallen.ch",
+      instagram: "https://www.instagram.com/north-studio-desk-st-gallen",
+      amenities: ["power", "wifi", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 33,
+      price: 13,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "07:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-031-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-031-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-031-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Studio Desk Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-032",
+    email: "hello@riverside-lab-workspace-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-03T10:30:38.704Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Bar Genève AG",
+      phone: "+41 21 585 63 32",
+      locationName: "Riverside Lab Workspace",
+      address: "Josefstrasse 112",
+      city: "Genève",
     },
     hostLocation: {
       category: "bar",
       description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://pulse-lab-workspace-basel.ch",
-      instagram: "https://www.instagram.com/pulse-lab-workspace-basel",
-      amenities: ["wc", "power", "laptop-zone", "wifi"],
+      website: "https://riverside-lab-workspace-geneve.ch",
+      instagram: "https://www.instagram.com/riverside-lab-workspace-geneve",
+      amenities: ["power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 22,
+      price: 31,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-032-image-1",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-032-image-2",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-032-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-032-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "22.01.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-032-review-2",
+          author: "Luca",
+          rating: 5,
+          date: "28.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-032-review-3",
+          author: "Noah",
+          rating: 5,
+          date: "25.03.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-033",
+    email: "hello@loft-desk-club-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-18T11:03:48.723Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Lounge Winterthur AG",
+      phone: "+41 61 296 52 33",
+      locationName: "Loft Desk Club",
+      address: "Langstrasse 69",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://loft-desk-club-winterthur.ch",
+      instagram: "https://www.instagram.com/loft-desk-club-winterthur",
+      amenities: ["power", "wifi", "wc"],
+    },
+    hostSetup: {
+      spots: 29,
+      price: 14,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-033-image-1",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-033-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-033-image-3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-033-review-1",
+          author: "Luca",
+          rating: 5,
+          date: "27.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-033-review-2",
+          author: "Tom",
+          rating: 4,
+          date: "17.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-033-review-3",
+          author: "Luca",
+          rating: 5,
+          date: "09.04.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-034",
+    email: "hello@urban-desk-house-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-08T11:42:10.882Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Restaurant Bern GmbH",
+      phone: "+41 22 316 11 34",
+      locationName: "Urban Desk House",
+      address: "Hardstrasse 43",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://urban-desk-house-bern.ch",
+      instagram: "https://www.instagram.com/urban-desk-house-bern",
+      amenities: ["wc", "wifi", "laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 7,
+      price: 10,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "08:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-034-image-1",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 1",
+        },
+        {
+          id: "seed-host-034-image-2",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 2",
+        },
+        {
+          id: "seed-host-034-image-3",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-035",
+    email: "hello@south-workspace-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-08T17:24:37.476Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Lounge Lausanne AG",
+      phone: "+41 52 433 32 35",
+      locationName: "South Workspace",
+      address: "Langstrasse 33",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://south-workspace-lausanne.ch",
+      instagram: "https://www.instagram.com/south-workspace-lausanne",
+      amenities: ["laptop-zone", "wifi"],
+    },
+    hostSetup: {
+      spots: 11,
+      price: 20,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-035-image-1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 1",
+        },
+        {
+          id: "seed-host-035-image-2",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 2",
+        },
+        {
+          id: "seed-host-035-image-3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-035-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "11.03.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-036",
+    email: "hello@metro-cowork-spot-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-06T02:14:33.704Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Café Zug GmbH",
+      phone: "+41 41 139 33 36",
+      locationName: "Metro Cowork Spot",
+      address: "Seefeldstrasse 105",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://metro-cowork-spot-zug.ch",
+      instagram: "https://www.instagram.com/metro-cowork-spot-zug",
+      amenities: ["power", "wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 34,
+      price: 14,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-036-image-1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-036-image-2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-036-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-037",
+    email: "hello@riverside-workspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-22T11:45:03.077Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Bar Bern AG",
+      phone: "+41 44 790 29 37",
+      locationName: "Riverside Workspace",
+      address: "Bahnhofstrasse 106",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://riverside-workspace-bern.ch",
+      instagram: "https://www.instagram.com/riverside-workspace-bern",
+      amenities: ["wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 18,
+      price: 25,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "07:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-037-image-1",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 1",
+        },
+        {
+          id: "seed-host-037-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 2",
+        },
+        {
+          id: "seed-host-037-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-038",
+    email: "hello@vista-cowork-spot-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-10T10:28:18.547Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Restaurant Winterthur GmbH",
+      phone: "+41 22 237 20 38",
+      locationName: "Vista Cowork Spot",
+      address: "Langstrasse 67",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://vista-cowork-spot-winterthur.ch",
+      instagram: "https://www.instagram.com/vista-cowork-spot-winterthur",
+      amenities: ["wifi", "laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 17,
+      price: 17,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-038-image-1",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-038-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-038-image-3",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-038-review-1",
+          author: "Sara",
+          rating: 5,
+          date: "28.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-039",
+    email: "hello@urban-desk-house-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-16T16:04:00.983Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Restaurant Winterthur GmbH",
+      phone: "+41 21 968 75 39",
+      locationName: "Urban Desk House",
+      address: "Rue du Rhône 96",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://urban-desk-house-winterthur.ch",
+      instagram: "https://www.instagram.com/urban-desk-house-winterthur",
+      amenities: ["wifi", "power", "wc"],
+    },
+    hostSetup: {
+      spots: 8,
+      price: 25,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-039-image-1",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 1",
+        },
+        {
+          id: "seed-host-039-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 2",
+        },
+        {
+          id: "seed-host-039-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-039-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "24.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-040",
+    email: "hello@dock-workspace-aarau.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-12T09:50:06.883Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Dock Café Aarau GmbH",
+      phone: "+41 61 967 31 40",
+      locationName: "Dock Workspace",
+      address: "Spitalgasse 120",
+      city: "Aarau",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://dock-workspace-aarau.ch",
+      instagram: "https://www.instagram.com/dock-workspace-aarau",
+      amenities: ["wifi", "power"],
+    },
+    hostSetup: {
+      spots: 36,
+      price: 32,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "10:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-040-image-1",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Workspace Bild 1",
+        },
+        {
+          id: "seed-host-040-image-2",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Workspace Bild 2",
+        },
+        {
+          id: "seed-host-040-image-3",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-040-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "19.01.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-041",
+    email: "hello@metro-workspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-16T13:13:55.044Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Café Bern GmbH",
+      phone: "+41 21 235 79 41",
+      locationName: "Metro Workspace",
+      address: "Clarastrasse 18",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://metro-workspace-bern.ch",
+      instagram: "https://www.instagram.com/metro-workspace-bern",
+      amenities: ["power", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 30,
+      price: 23,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-041-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 1",
+        },
+        {
+          id: "seed-host-041-image-2",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 2",
+        },
+        {
+          id: "seed-host-041-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-041-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "06.01.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-041-review-2",
+          author: "Tom",
+          rating: 5,
+          date: "26.01.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-042",
+    email: "hello@alpine-cowork-spot-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-28T05:47:34.730Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Alpine Lounge Luzern AG",
+      phone: "+41 31 887 71 42",
+      locationName: "Alpine Cowork Spot",
+      address: "Bahnhofstrasse 21",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://alpine-cowork-spot-luzern.ch",
+      instagram: "https://www.instagram.com/alpine-cowork-spot-luzern",
+      amenities: ["wc", "wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 12,
+      price: 25,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-042-image-1",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-042-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-042-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-042-review-1",
+          author: "Noah",
+          rating: 5,
+          date: "24.04.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-042-review-2",
+          author: "Luca",
+          rating: 5,
+          date: "02.03.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-043",
+    email: "hello@lake-studio-desk-zuerich.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-08T14:40:21.062Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Lake Café Zürich GmbH",
+      phone: "+41 22 936 31 43",
+      locationName: "Lake Studio Desk",
+      address: "Langstrasse 119",
+      city: "Zürich",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://lake-studio-desk-zuerich.ch",
+      instagram: "https://www.instagram.com/lake-studio-desk-zuerich",
+      amenities: ["laptop-zone", "wifi", "wc", "power"],
+    },
+    hostSetup: {
+      spots: 31,
+      price: 22,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-043-image-1",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-043-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-043-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-043-review-1",
+          author: "Jan",
+          rating: 5,
+          date: "04.02.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-044",
+    email: "hello@loft-dayspace-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-15T14:42:57.647Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Zug GmbH",
+      phone: "+41 41 285 45 44",
+      locationName: "Loft Dayspace",
+      address: "Spitalgasse 101",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://loft-dayspace-zug.ch",
+      instagram: "https://www.instagram.com/loft-dayspace-zug",
+      amenities: ["laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 20,
+      price: 10,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-044-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-044-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-044-image-3",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Dayspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-044-review-1",
+          author: "David",
+          rating: 5,
+          date: "06.03.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-044-review-2",
+          author: "Nina",
+          rating: 5,
+          date: "04.01.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-045",
+    email: "hello@dock-desk-club-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-10T22:31:11.906Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Dock Lounge Lugano AG",
+      phone: "+41 41 255 45 45",
+      locationName: "Dock Desk Club",
+      address: "Bahnhofstrasse 63",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://dock-desk-club-lugano.ch",
+      instagram: "https://www.instagram.com/dock-desk-club-lugano",
+      amenities: ["power", "wifi"],
+    },
+    hostSetup: {
+      spots: 27,
+      price: 28,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-045-image-1",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-045-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-045-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Desk Club Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-046",
+    email: "hello@alpine-dayspace-zuerich.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-20T10:16:09.645Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Alpine Bar Zürich AG",
+      phone: "+41 41 242 47 46",
+      locationName: "Alpine Dayspace",
+      address: "Clarastrasse 115",
+      city: "Zürich",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://alpine-dayspace-zuerich.ch",
+      instagram: "https://www.instagram.com/alpine-dayspace-zuerich",
+      amenities: ["laptop-zone", "wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 29,
+      price: 20,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-046-image-1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-046-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-046-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Dayspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-047",
+    email: "hello@studio-hub-space-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-28T19:58:07.408Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Café Luzern GmbH",
+      phone: "+41 61 271 65 47",
+      locationName: "Studio Hub Space",
+      address: "Pilatusstrasse 89",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://studio-hub-space-luzern.ch",
+      instagram: "https://www.instagram.com/studio-hub-space-luzern",
+      amenities: ["wc", "laptop-zone", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 21,
+      price: 11,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-047-image-1",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-047-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-047-image-3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-047-review-1",
+          author: "Mila",
+          rating: 5,
+          date: "22.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-047-review-2",
+          author: "Tom",
+          rating: 4,
+          date: "05.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-047-review-3",
+          author: "Sara",
+          rating: 5,
+          date: "13.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-048",
+    email: "hello@metro-office-lounge-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-23T04:55:39.654Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro St. Gallen GmbH",
+      phone: "+41 22 258 13 48",
+      locationName: "Metro Office Lounge",
+      address: "Kramgasse 33",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://metro-office-lounge-st-gallen.ch",
+      instagram: "https://www.instagram.com/metro-office-lounge-st-gallen",
+      amenities: ["wifi", "wc", "laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 30,
+      price: 28,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "10:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-048-image-1",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-048-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-048-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Office Lounge Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-049",
+    email: "hello@studio-desk-club-zuerich.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-12T04:56:27.576Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Bar Zürich AG",
+      phone: "+41 61 815 36 49",
+      locationName: "Studio Desk Club",
+      address: "Kramgasse 120",
+      city: "Zürich",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://studio-desk-club-zuerich.ch",
+      instagram: "https://www.instagram.com/studio-desk-club-zuerich",
+      amenities: ["power", "wifi"],
+    },
+    hostSetup: {
+      spots: 31,
+      price: 21,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "09:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-049-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-049-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-049-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-049-review-1",
+          author: "David",
+          rating: 4,
+          date: "15.02.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-049-review-2",
+          author: "Noah",
+          rating: 5,
+          date: "10.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-049-review-3",
+          author: "David",
+          rating: 4,
+          date: "04.03.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-050",
+    email: "hello@alpine-workspace-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-18T16:04:12.779Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Alpine Restaurant Zug GmbH",
+      phone: "+41 91 111 18 50",
+      locationName: "Alpine Workspace",
+      address: "Langstrasse 17",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://alpine-workspace-zug.ch",
+      instagram: "https://www.instagram.com/alpine-workspace-zug",
+      amenities: ["power", "wc"],
+    },
+    hostSetup: {
+      spots: 31,
+      price: 8,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-050-image-1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 1",
+        },
+        {
+          id: "seed-host-050-image-2",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 2",
+        },
+        {
+          id: "seed-host-050-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-051",
+    email: "hello@metro-studio-desk-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-18T18:59:41.140Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Bar Luzern AG",
+      phone: "+41 61 670 30 51",
+      locationName: "Metro Studio Desk",
+      address: "Rue du Rhône 14",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://metro-studio-desk-luzern.ch",
+      instagram: "https://www.instagram.com/metro-studio-desk-luzern",
+      amenities: ["laptop-zone", "wc", "power", "wifi"],
     },
     hostSetup: {
       spots: 19,
+      price: 27,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-051-image-1",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-051-image-2",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-051-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-051-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "06.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-051-review-2",
+          author: "Nina",
+          rating: 4,
+          date: "22.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-052",
+    email: "hello@metro-desk-house-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-12T04:51:55.629Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Bar Bern AG",
+      phone: "+41 31 682 73 52",
+      locationName: "Metro Desk House",
+      address: "Spitalgasse 61",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://metro-desk-house-bern.ch",
+      instagram: "https://www.instagram.com/metro-desk-house-bern",
+      amenities: ["wc", "wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 31,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "08:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-052-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk House Bild 1",
+        },
+        {
+          id: "seed-host-052-image-2",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk House Bild 2",
+        },
+        {
+          id: "seed-host-052-image-3",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk House Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-052-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "05.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-053",
+    email: "hello@riverside-hub-space-aarau.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-13T11:02:31.410Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Lounge Aarau AG",
+      phone: "+41 44 570 75 53",
+      locationName: "Riverside Hub Space",
+      address: "Baarerstrasse 63",
+      city: "Aarau",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://riverside-hub-space-aarau.ch",
+      instagram: "https://www.instagram.com/riverside-hub-space-aarau",
+      amenities: ["wc", "laptop-zone", "wifi"],
+    },
+    hostSetup: {
+      spots: 26,
+      price: 12,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-053-image-1",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-053-image-2",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-053-image-3",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-054",
+    email: "hello@alpine-office-lounge-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-12T23:17:26.241Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Alpine Café Genève GmbH",
+      phone: "+41 52 152 21 54",
+      locationName: "Alpine Office Lounge",
+      address: "Pilatusstrasse 49",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://alpine-office-lounge-geneve.ch",
+      instagram: "https://www.instagram.com/alpine-office-lounge-geneve",
+      amenities: ["wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 9,
+      price: 16,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-054-image-1",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-054-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-054-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-054-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "11.01.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-055",
+    email: "hello@lake-desk-house-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-06T06:08:07.056Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Lake Bern GmbH",
+      phone: "+41 21 510 45 55",
+      locationName: "Lake Desk House",
+      address: "Langstrasse 25",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://lake-desk-house-bern.ch",
+      instagram: "https://www.instagram.com/lake-desk-house-bern",
+      amenities: ["wifi", "power", "wc"],
+    },
+    hostSetup: {
+      spots: 36,
+      price: 11,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-055-image-1",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Desk House Bild 1",
+        },
+        {
+          id: "seed-host-055-image-2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Desk House Bild 2",
+        },
+        {
+          id: "seed-host-055-image-3",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Desk House Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-055-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "02.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-055-review-2",
+          author: "Elin",
+          rating: 4,
+          date: "17.04.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-056",
+    email: "hello@urban-dayspace-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-31T08:21:34.101Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Café Genève GmbH",
+      phone: "+41 91 791 94 56",
+      locationName: "Urban Dayspace",
+      address: "Rue du Rhône 89",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Moderner Café mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-dayspace-geneve.ch",
+      instagram: "https://www.instagram.com/urban-dayspace-geneve",
+      amenities: ["wifi", "wc"],
+    },
+    hostSetup: {
+      spots: 23,
+      price: 15,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "10:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-056-image-1",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-056-image-2",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-056-image-3",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-056-review-1",
+          author: "Sara",
+          rating: 4,
+          date: "21.01.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-056-review-2",
+          author: "David",
+          rating: 5,
+          date: "16.02.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-056-review-3",
+          author: "Tom",
+          rating: 5,
+          date: "10.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-057",
+    email: "hello@metro-work-lounge-aarau.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-26T17:20:55.886Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Bar Aarau AG",
+      phone: "+41 71 281 40 57",
+      locationName: "Metro Work Lounge",
+      address: "Pilatusstrasse 57",
+      city: "Aarau",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://metro-work-lounge-aarau.ch",
+      instagram: "https://www.instagram.com/metro-work-lounge-aarau",
+      amenities: ["wc", "wifi"],
+    },
+    hostSetup: {
+      spots: 28,
+      price: 16,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-057-image-1",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Work Lounge Bild 1",
+        },
+        {
+          id: "seed-host-057-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Work Lounge Bild 2",
+        },
+        {
+          id: "seed-host-057-image-3",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Work Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-057-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "02.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-057-review-2",
+          author: "Lena",
+          rating: 5,
+          date: "05.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-058",
+    email: "hello@north-lab-workspace-geneve.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-30T23:11:35.589Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "North Café Genève GmbH",
+      phone: "+41 71 105 52 58",
+      locationName: "North Lab Workspace",
+      address: "Rue du Rhône 86",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://north-lab-workspace-geneve.ch",
+      instagram: "https://www.instagram.com/north-lab-workspace-geneve",
+      amenities: ["power", "wifi"],
+    },
+    hostSetup: {
+      spots: 26,
+      price: 12,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "09:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-058-image-1",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-058-image-2",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-058-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-058-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "06.04.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-058-review-2",
+          author: "Jan",
+          rating: 4,
+          date: "15.03.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+        {
+          id: "seed-host-058-review-3",
+          author: "Marco",
+          rating: 5,
+          date: "03.03.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-059",
+    email: "hello@vista-dayspace-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-15T15:31:01.334Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Café Zug GmbH",
+      phone: "+41 44 177 72 59",
+      locationName: "Vista Dayspace",
+      address: "Langstrasse 113",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://vista-dayspace-zug.ch",
+      instagram: "https://www.instagram.com/vista-dayspace-zug",
+      amenities: ["laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 28,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "10:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-059-image-1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-059-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-059-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Dayspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-060",
+    email: "hello@lake-studio-desk-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-21T20:32:20.884Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Lake Lugano GmbH",
+      phone: "+41 71 823 91 60",
+      locationName: "Lake Studio Desk",
+      address: "Seefeldstrasse 61",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://lake-studio-desk-lugano.ch",
+      instagram: "https://www.instagram.com/lake-studio-desk-lugano",
+      amenities: ["power", "wifi", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 7,
+      price: 20,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-060-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-060-image-2",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-060-image-3",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-061",
+    email: "hello@studio-studio-desk-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-26T15:27:30.240Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Studio Restaurant Winterthur GmbH",
+      phone: "+41 41 781 99 61",
+      locationName: "Studio Studio Desk",
+      address: "Clarastrasse 67",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://studio-studio-desk-winterthur.ch",
+      instagram: "https://www.instagram.com/studio-studio-desk-winterthur",
+      amenities: ["laptop-zone", "wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 15,
+      price: 22,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "10:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-061-image-1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-061-image-2",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-061-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Studio Desk Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-062",
+    email: "hello@lake-office-lounge-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-08T14:24:39.060Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Lake Lounge Lausanne AG",
+      phone: "+41 52 137 17 62",
+      locationName: "Lake Office Lounge",
+      address: "Kramgasse 75",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://lake-office-lounge-lausanne.ch",
+      instagram: "https://www.instagram.com/lake-office-lounge-lausanne",
+      amenities: ["wifi", "wc", "power"],
+    },
+    hostSetup: {
+      spots: 8,
+      price: 21,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-062-image-1",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-062-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-062-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Office Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-062-review-1",
+          author: "Mila",
+          rating: 5,
+          date: "15.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-062-review-2",
+          author: "Jan",
+          rating: 4,
+          date: "26.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-063",
+    email: "hello@vista-cowork-spot-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-14T11:13:33.141Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Restaurant Luzern GmbH",
+      phone: "+41 31 553 73 63",
+      locationName: "Vista Cowork Spot",
+      address: "Langstrasse 58",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://vista-cowork-spot-luzern.ch",
+      instagram: "https://www.instagram.com/vista-cowork-spot-luzern",
+      amenities: ["power", "wc", "wifi", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 6,
       price: 10,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-063-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-063-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-063-image-3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-063-review-1",
+          author: "Sofia",
+          rating: 4,
+          date: "23.01.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-063-review-2",
+          author: "Sara",
+          rating: 5,
+          date: "05.01.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-063-review-3",
+          author: "Lena",
+          rating: 4,
+          date: "08.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-064",
+    email: "hello@south-hub-space-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-17T23:04:50.144Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Restaurant Lugano GmbH",
+      phone: "+41 22 735 77 64",
+      locationName: "South Hub Space",
+      address: "Clarastrasse 70",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://south-hub-space-lugano.ch",
+      instagram: "https://www.instagram.com/south-hub-space-lugano",
+      amenities: ["wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 9,
+      price: 18,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-064-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-064-image-2",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-064-image-3",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Hub Space Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-065",
+    email: "hello@loft-lab-workspace-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-02T15:07:35.201Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft St. Gallen GmbH",
+      phone: "+41 44 562 88 65",
+      locationName: "Loft Lab Workspace",
+      address: "Josefstrasse 85",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://loft-lab-workspace-st-gallen.ch",
+      instagram: "https://www.instagram.com/loft-lab-workspace-st-gallen",
+      amenities: ["wc", "wifi", "laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 24,
+      price: 23,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-065-image-1",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-065-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-065-image-3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-065-review-1",
+          author: "Sara",
+          rating: 5,
+          date: "17.02.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-065-review-2",
+          author: "Mila",
+          rating: 4,
+          date: "14.01.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-066",
+    email: "hello@vista-workspace-zug.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-18T13:02:02.773Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Zug GmbH",
+      phone: "+41 91 618 68 66",
+      locationName: "Vista Workspace",
+      address: "Spitalgasse 58",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://vista-workspace-zug.ch",
+      instagram: "https://www.instagram.com/vista-workspace-zug",
+      amenities: ["laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 18,
+      price: 23,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "10:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-066-image-1",
+          url: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 1",
+        },
+        {
+          id: "seed-host-066-image-2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 2",
+        },
+        {
+          id: "seed-host-066-image-3",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-067",
+    email: "hello@north-office-lounge-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-28T01:40:45.984Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "North Bar Zug AG",
+      phone: "+41 41 950 80 67",
+      locationName: "North Office Lounge",
+      address: "Spitalgasse 28",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://north-office-lounge-zug.ch",
+      instagram: "https://www.instagram.com/north-office-lounge-zug",
+      amenities: ["power", "laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 34,
+      price: 25,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-067-image-1",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-067-image-2",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-067-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Office Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-067-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "01.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-068",
+    email: "hello@loft-cowork-spot-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-15T07:34:58.441Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Zug GmbH",
+      phone: "+41 61 374 35 68",
+      locationName: "Loft Cowork Spot",
+      address: "Clarastrasse 85",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://loft-cowork-spot-zug.ch",
+      instagram: "https://www.instagram.com/loft-cowork-spot-zug",
+      amenities: ["power", "wifi"],
+    },
+    hostSetup: {
+      spots: 15,
+      price: 32,
       marked: true,
       laptopZoneOnly: true,
       slotDuration: "4h",
@@ -6346,119 +4751,370 @@ const hosts: SeedHost[] = [
       from: "07:00",
       to: "17:00",
       recurring: true,
-      gracePeriod: 20,
-      extendAllowed: false,
+      gracePeriod: 10,
+      extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
-          id: "seed-host-094-image-1",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 1",
+          id: "seed-host-068-image-1",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Cowork Spot Bild 1",
         },
         {
-          id: "seed-host-094-image-2",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 2",
-        },
-        {
-          id: "seed-host-094-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Pulse Lab Workspace Bild 3",
-        },
-      ],
-      reviews: [],
-    },
-  },
-
-  {
-    uid: "seed-host-095",
-    email: "hello@vista-desk-house-basel.ch",
-    avatarUrl: null,
-    hostProfile: {
-      operatorName: "Vista Café Basel GmbH",
-      phone: "+41 61 663 83 95",
-      locationName: "Vista Desk House",
-      address: "Baarerstrasse 31",
-      city: "Basel",
-    },
-    hostLocation: {
-      category: "cafe",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://vista-desk-house-basel.ch",
-      instagram: "https://www.instagram.com/vista-desk-house-basel",
-      amenities: ["laptop-zone", "power", "wc", "wifi"],
-    },
-    hostSetup: {
-      spots: 6,
-      price: 31,
-      marked: false,
-      laptopZoneOnly: true,
-      slotDuration: "2h",
-    },
-    hostAvailability: {
-      days: ["mon", "wed", "thu", "fri", "sat"],
-      from: "08:00",
-      to: "18:00",
-      recurring: true,
-      gracePeriod: 15,
-      extendAllowed: false,
-    },
-    hostRules: {
-      accepted: RULE_IDS,
-    },
-    hostContent: {
-      gallery: [
-        {
-          id: "seed-host-095-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 1",
-        },
-        {
-          id: "seed-host-095-image-2",
-          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 2",
-        },
-        {
-          id: "seed-host-095-image-3",
+          id: "seed-host-068-image-2",
           url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "Vista Desk House Bild 3",
+          alt: "Loft Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-068-image-3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Cowork Spot Bild 3",
         },
       ],
-      reviews: [],
+      reviews: [
+        {
+          id: "seed-host-068-review-1",
+          author: "David",
+          rating: 5,
+          date: "14.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-068-review-2",
+          author: "Mila",
+          rating: 4,
+          date: "01.01.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
     },
   },
 
   {
-    uid: "seed-host-096",
-    email: "hello@alpine-office-lounge-luzern.ch",
+    uid: "seed-host-069",
+    email: "hello@north-desk-club-neuchatel.ch",
     avatarUrl: null,
+    createdAt: "2026-02-04T10:07:48.981Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Alpine Luzern GmbH",
-      phone: "+41 71 913 47 96",
-      locationName: "Alpine Office Lounge",
-      address: "Marktgasse 102",
-      city: "Luzern",
+      operatorName: "North Restaurant Neuchâtel GmbH",
+      phone: "+41 41 241 50 69",
+      locationName: "North Desk Club",
+      address: "Seefeldstrasse 113",
+      city: "Neuchâtel",
     },
     hostLocation: {
-      category: "other",
-      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
-      website: "https://alpine-office-lounge-luzern.ch",
-      instagram: "https://www.instagram.com/alpine-office-lounge-luzern",
-      amenities: ["power", "wifi", "laptop-zone"],
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://north-desk-club-neuchatel.ch",
+      instagram: "https://www.instagram.com/north-desk-club-neuchatel",
+      amenities: ["wifi", "wc", "power"],
     },
     hostSetup: {
-      spots: 22,
+      spots: 15,
       price: 23,
-      marked: false,
+      marked: true,
       laptopZoneOnly: true,
-      slotDuration: "2h",
+      slotDuration: "4h",
     },
     hostAvailability: {
       days: ["mon", "tue", "wed"],
+      from: "09:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-069-image-1",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-069-image-2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-069-image-3",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-069-review-1",
+          author: "David",
+          rating: 5,
+          date: "10.03.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-069-review-2",
+          author: "Mila",
+          rating: 5,
+          date: "06.02.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-070",
+    email: "hello@vista-lab-workspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-23T19:06:37.522Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Bar Bern AG",
+      phone: "+41 31 334 97 70",
+      locationName: "Vista Lab Workspace",
+      address: "Bahnhofstrasse 72",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://vista-lab-workspace-bern.ch",
+      instagram: "https://www.instagram.com/vista-lab-workspace-bern",
+      amenities: ["power", "wifi"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 15,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "10:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-070-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-070-image-2",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-070-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-071",
+    email: "hello@lake-studio-desk-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-05T09:19:16.572Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Lake Bern GmbH",
+      phone: "+41 52 851 82 71",
+      locationName: "Lake Studio Desk",
+      address: "Baarerstrasse 49",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://lake-studio-desk-bern.ch",
+      instagram: "https://www.instagram.com/lake-studio-desk-bern",
+      amenities: ["wc", "laptop-zone", "wifi"],
+    },
+    hostSetup: {
+      spots: 35,
+      price: 19,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-071-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-071-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-071-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-071-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "04.04.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-071-review-2",
+          author: "Sara",
+          rating: 4,
+          date: "05.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-071-review-3",
+          author: "Elin",
+          rating: 4,
+          date: "04.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-072",
+    email: "hello@dock-lab-workspace-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-10T00:50:48.632Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Dock Winterthur GmbH",
+      phone: "+41 71 300 37 72",
+      locationName: "Dock Lab Workspace",
+      address: "Clarastrasse 76",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://dock-lab-workspace-winterthur.ch",
+      instagram: "https://www.instagram.com/dock-lab-workspace-winterthur",
+      amenities: ["power", "laptop-zone", "wifi"],
+    },
+    hostSetup: {
+      spots: 15,
+      price: 23,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-072-image-1",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-072-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-072-image-3",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-072-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "20.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-072-review-2",
+          author: "Luca",
+          rating: 5,
+          date: "08.02.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-073",
+    email: "hello@vista-workspace-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-27T07:08:22.007Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Vista Bar Lausanne AG",
+      phone: "+41 44 872 91 73",
+      locationName: "Vista Workspace",
+      address: "Rue du Rhône 116",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://vista-workspace-lausanne.ch",
+      instagram: "https://www.instagram.com/vista-workspace-lausanne",
+      amenities: ["laptop-zone", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 31,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
       from: "07:00",
       to: "20:00",
       recurring: true,
@@ -6466,24 +5122,24 @@ const hosts: SeedHost[] = [
       extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
-          id: "seed-host-096-image-1",
-          url: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 1",
+          id: "seed-host-073-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 1",
         },
         {
-          id: "seed-host-096-image-2",
-          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 2",
+          id: "seed-host-073-image-2",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 2",
         },
         {
-          id: "seed-host-096-image-3",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "Alpine Office Lounge Bild 3",
+          id: "seed-host-073-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Vista Workspace Bild 3",
         },
       ],
       reviews: [],
@@ -6491,65 +5147,1761 @@ const hosts: SeedHost[] = [
   },
 
   {
-    uid: "seed-host-097",
-    email: "hello@riverside-workspace-lugano.ch",
+    uid: "seed-host-074",
+    email: "hello@alpine-office-lounge-geneve.ch",
     avatarUrl: null,
+    createdAt: "2026-04-04T17:25:32.219Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
     hostProfile: {
-      operatorName: "Riverside Lugano GmbH",
-      phone: "+41 21 291 47 97",
-      locationName: "Riverside Workspace",
-      address: "Langstrasse 18",
-      city: "Lugano",
+      operatorName: "Alpine Café Genève GmbH",
+      phone: "+41 52 171 64 74",
+      locationName: "Alpine Office Lounge",
+      address: "Bahnhofstrasse 94",
+      city: "Genève",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://alpine-office-lounge-geneve.ch",
+      instagram: "https://www.instagram.com/alpine-office-lounge-geneve",
+      amenities: ["wc", "laptop-zone", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 30,
+      price: 8,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-074-image-1",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 1",
+        },
+        {
+          id: "seed-host-074-image-2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 2",
+        },
+        {
+          id: "seed-host-074-image-3",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Office Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-074-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "10.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-075",
+    email: "hello@metro-desk-club-aarau.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-27T05:57:27.233Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Metro Restaurant Aarau GmbH",
+      phone: "+41 91 316 91 75",
+      locationName: "Metro Desk Club",
+      address: "Hardstrasse 104",
+      city: "Aarau",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://metro-desk-club-aarau.ch",
+      instagram: "https://www.instagram.com/metro-desk-club-aarau",
+      amenities: ["laptop-zone", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 27,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "10:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-075-image-1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-075-image-2",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-075-image-3",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Desk Club Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-076",
+    email: "hello@urban-cowork-spot-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-07T05:16:32.006Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Bar Winterthur AG",
+      phone: "+41 31 619 26 76",
+      locationName: "Urban Cowork Spot",
+      address: "Marktgasse 7",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://urban-cowork-spot-winterthur.ch",
+      instagram: "https://www.instagram.com/urban-cowork-spot-winterthur",
+      amenities: ["laptop-zone", "wc", "wifi"],
+    },
+    hostSetup: {
+      spots: 26,
+      price: 32,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-076-image-1",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-076-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-076-image-3",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-076-review-1",
+          author: "Luca",
+          rating: 4,
+          date: "01.01.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-076-review-2",
+          author: "Jan",
+          rating: 4,
+          date: "06.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-077",
+    email: "hello@north-work-lounge-zuerich.ch",
+    avatarUrl: null,
+    createdAt: "2025-10-30T01:24:27.500Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "North Restaurant Zürich GmbH",
+      phone: "+41 22 952 86 77",
+      locationName: "North Work Lounge",
+      address: "Rue du Rhône 97",
+      city: "Zürich",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://north-work-lounge-zuerich.ch",
+      instagram: "https://www.instagram.com/north-work-lounge-zuerich",
+      amenities: ["wc", "wifi", "power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 11,
+      price: 13,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "19:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-077-image-1",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Work Lounge Bild 1",
+        },
+        {
+          id: "seed-host-077-image-2",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Work Lounge Bild 2",
+        },
+        {
+          id: "seed-host-077-image-3",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "North Work Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-077-review-1",
+          author: "Tom",
+          rating: 5,
+          date: "23.03.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-077-review-2",
+          author: "Marco",
+          rating: 4,
+          date: "11.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-077-review-3",
+          author: "Mila",
+          rating: 5,
+          date: "07.02.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-078",
+    email: "hello@riverside-desk-club-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-11T03:01:08.466Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Restaurant Luzern GmbH",
+      phone: "+41 31 575 56 78",
+      locationName: "Riverside Desk Club",
+      address: "Baarerstrasse 20",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://riverside-desk-club-luzern.ch",
+      instagram: "https://www.instagram.com/riverside-desk-club-luzern",
+      amenities: ["wc", "power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 22,
+      price: 9,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-078-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-078-image-2",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-078-image-3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-078-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "12.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-079",
+    email: "hello@loft-desk-club-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-07T06:41:08.220Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Café Lausanne GmbH",
+      phone: "+41 41 572 57 79",
+      locationName: "Loft Desk Club",
+      address: "Pilatusstrasse 40",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "cafe",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://loft-desk-club-lausanne.ch",
+      instagram: "https://www.instagram.com/loft-desk-club-lausanne",
+      amenities: ["power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 13,
+      price: 17,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-079-image-1",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-079-image-2",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-079-image-3",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-079-review-1",
+          author: "Tom",
+          rating: 5,
+          date: "23.03.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-079-review-2",
+          author: "Nina",
+          rating: 5,
+          date: "20.04.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-080",
+    email: "hello@urban-cowork-spot-basel.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-14T11:56:11.185Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Basel GmbH",
+      phone: "+41 52 326 83 80",
+      locationName: "Urban Cowork Spot",
+      address: "Pilatusstrasse 41",
+      city: "Basel",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://urban-cowork-spot-basel.ch",
+      instagram: "https://www.instagram.com/urban-cowork-spot-basel",
+      amenities: ["laptop-zone", "wc"],
+    },
+    hostSetup: {
+      spots: 28,
+      price: 22,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "10:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-080-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-080-image-2",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-080-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-080-review-1",
+          author: "Sofia",
+          rating: 5,
+          date: "09.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-081",
+    email: "hello@dock-lab-workspace-neuchatel.ch",
+    avatarUrl: null,
+    createdAt: "2025-11-26T15:33:09.229Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Dock Restaurant Neuchâtel GmbH",
+      phone: "+41 22 491 73 81",
+      locationName: "Dock Lab Workspace",
+      address: "Pilatusstrasse 24",
+      city: "Neuchâtel",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://dock-lab-workspace-neuchatel.ch",
+      instagram: "https://www.instagram.com/dock-lab-workspace-neuchatel",
+      amenities: ["wc", "laptop-zone", "power", "wifi"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 11,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "07:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-081-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 1",
+        },
+        {
+          id: "seed-host-081-image-2",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 2",
+        },
+        {
+          id: "seed-host-081-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Lab Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-081-review-1",
+          author: "Noah",
+          rating: 5,
+          date: "09.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-081-review-2",
+          author: "Tom",
+          rating: 5,
+          date: "08.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-081-review-3",
+          author: "David",
+          rating: 4,
+          date: "14.04.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-082",
+    email: "hello@south-cowork-spot-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-10T03:33:59.272Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "South Luzern GmbH",
+      phone: "+41 31 291 67 82",
+      locationName: "South Cowork Spot",
+      address: "Baarerstrasse 24",
+      city: "Luzern",
     },
     hostLocation: {
       category: "other",
       description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://riverside-workspace-lugano.ch",
-      instagram: "https://www.instagram.com/riverside-workspace-lugano",
-      amenities: ["wifi", "laptop-zone", "power", "wc"],
+      website: "https://south-cowork-spot-luzern.ch",
+      instagram: "https://www.instagram.com/south-cowork-spot-luzern",
+      amenities: ["wc", "laptop-zone", "power"],
     },
     hostSetup: {
-      spots: 26,
-      price: 26,
+      spots: 18,
+      price: 25,
       marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-082-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Cowork Spot Bild 1",
+        },
+        {
+          id: "seed-host-082-image-2",
+          url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Cowork Spot Bild 2",
+        },
+        {
+          id: "seed-host-082-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Cowork Spot Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-082-review-1",
+          author: "Jan",
+          rating: 4,
+          date: "13.01.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-082-review-2",
+          author: "Sofia",
+          rating: 4,
+          date: "22.02.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-083",
+    email: "hello@alpine-workspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-08T19:37:49.888Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Alpine Restaurant Bern GmbH",
+      phone: "+41 41 560 98 83",
+      locationName: "Alpine Workspace",
+      address: "Hardstrasse 9",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://alpine-workspace-bern.ch",
+      instagram: "https://www.instagram.com/alpine-workspace-bern",
+      amenities: ["wc", "power", "wifi"],
+    },
+    hostSetup: {
+      spots: 10,
+      price: 11,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "10:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-083-image-1",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 1",
+        },
+        {
+          id: "seed-host-083-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 2",
+        },
+        {
+          id: "seed-host-083-image-3",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Alpine Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-084",
+    email: "hello@urban-dayspace-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-12T05:37:56.875Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Urban Bar Luzern AG",
+      phone: "+41 61 241 85 84",
+      locationName: "Urban Dayspace",
+      address: "Marktgasse 20",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-dayspace-luzern.ch",
+      instagram: "https://www.instagram.com/urban-dayspace-luzern",
+      amenities: ["laptop-zone", "wifi", "power", "wc"],
+    },
+    hostSetup: {
+      spots: 31,
+      price: 24,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-084-image-1",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 1",
+        },
+        {
+          id: "seed-host-084-image-2",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 2",
+        },
+        {
+          id: "seed-host-084-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Dayspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-084-review-1",
+          author: "Tom",
+          rating: 4,
+          date: "04.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-084-review-2",
+          author: "Mila",
+          rating: 4,
+          date: "26.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-085",
+    email: "hello@riverside-work-lounge-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-06T17:42:24.396Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Restaurant Luzern GmbH",
+      phone: "+41 41 717 30 85",
+      locationName: "Riverside Work Lounge",
+      address: "Kramgasse 94",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://riverside-work-lounge-luzern.ch",
+      instagram: "https://www.instagram.com/riverside-work-lounge-luzern",
+      amenities: ["wc", "power"],
+    },
+    hostSetup: {
+      spots: 19,
+      price: 21,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-085-image-1",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Work Lounge Bild 1",
+        },
+        {
+          id: "seed-host-085-image-2",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Work Lounge Bild 2",
+        },
+        {
+          id: "seed-host-085-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Work Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-085-review-1",
+          author: "Lena",
+          rating: 4,
+          date: "21.01.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-085-review-2",
+          author: "Marco",
+          rating: 5,
+          date: "25.02.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-086",
+    email: "hello@riverside-workspace-neuchatel.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-27T13:23:40.788Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Lounge Neuchâtel AG",
+      phone: "+41 41 520 81 86",
+      locationName: "Riverside Workspace",
+      address: "Seefeldstrasse 3",
+      city: "Neuchâtel",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://riverside-workspace-neuchatel.ch",
+      instagram: "https://www.instagram.com/riverside-workspace-neuchatel",
+      amenities: ["wifi", "power", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 35,
+      price: 23,
+      marked: true,
+      laptopZoneOnly: true,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "07:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 10,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-086-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 1",
+        },
+        {
+          id: "seed-host-086-image-2",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 2",
+        },
+        {
+          id: "seed-host-086-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-086-review-1",
+          author: "David",
+          rating: 5,
+          date: "04.01.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-086-review-2",
+          author: "Nina",
+          rating: 5,
+          date: "28.01.2026",
+          text: "Gute Location für fokussierte Sessions. Kaffee war auch top.",
+        },
+        {
+          id: "seed-host-086-review-3",
+          author: "Marco",
+          rating: 4,
+          date: "25.03.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-087",
+    email: "hello@loft-work-lounge-winterthur.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-02T06:36:59.602Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Loft Lounge Winterthur AG",
+      phone: "+41 71 596 58 87",
+      locationName: "Loft Work Lounge",
+      address: "Clarastrasse 9",
+      city: "Winterthur",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://loft-work-lounge-winterthur.ch",
+      instagram: "https://www.instagram.com/loft-work-lounge-winterthur",
+      amenities: ["laptop-zone", "power", "wifi"],
+    },
+    hostSetup: {
+      spots: 17,
+      price: 18,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "10:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 20,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-087-image-1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Work Lounge Bild 1",
+        },
+        {
+          id: "seed-host-087-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Work Lounge Bild 2",
+        },
+        {
+          id: "seed-host-087-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Work Lounge Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-087-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "22.01.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+        {
+          id: "seed-host-087-review-2",
+          author: "David",
+          rating: 4,
+          date: "21.02.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-088",
+    email: "hello@riverside-hub-space-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-01T13:46:36.418Z",
+    updatedAt: "2026-04-18T15:21:08.983Z",
+    hostProfile: {
+      operatorName: "Riverside Lounge Lausanne AG",
+      phone: "+41 41 139 57 88",
+      locationName: "Riverside Hub Space",
+      address: "Clarastrasse 66",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://riverside-hub-space-lausanne.ch",
+      instagram: "https://www.instagram.com/riverside-hub-space-lausanne",
+      amenities: ["wc", "wifi", "power"],
+    },
+    hostSetup: {
+      spots: 18,
+      price: 16,
+      marked: false,
       laptopZoneOnly: false,
       slotDuration: "2h",
     },
     hostAvailability: {
       days: ["thu", "fri", "sat", "sun"],
       from: "08:00",
-      to: "21:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-088-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-088-image-2",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-088-image-3",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-088-review-1",
+          author: "Mila",
+          rating: 5,
+          date: "21.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-088-review-2",
+          author: "Tom",
+          rating: 5,
+          date: "28.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-089",
+    email: "hello@urban-studio-desk-luzern.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-29T20:31:19.770Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Urban Luzern GmbH",
+      phone: "+41 61 234 54 89",
+      locationName: "Urban Studio Desk",
+      address: "Josefstrasse 119",
+      city: "Luzern",
+    },
+    hostLocation: {
+      category: "other",
+      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-studio-desk-luzern.ch",
+      instagram: "https://www.instagram.com/urban-studio-desk-luzern",
+      amenities: ["wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 17,
+      price: 11,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "19:00",
       recurring: true,
       gracePeriod: 5,
       extendAllowed: true,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-089-image-1",
+          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-089-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-089-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-089-review-1",
+          author: "Lena",
+          rating: 5,
+          date: "23.04.2026",
+          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-090",
+    email: "hello@metro-studio-desk-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2026-04-03T17:34:02.440Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Metro Lounge Lugano AG",
+      phone: "+41 52 256 24 90",
+      locationName: "Metro Studio Desk",
+      address: "Pilatusstrasse 43",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Stilvoller Arbeitsort mit flexiblen Slots, Steckdosen und ruhigem Innenbereich.",
+      website: "https://metro-studio-desk-lugano.ch",
+      instagram: "https://www.instagram.com/metro-studio-desk-lugano",
+      amenities: ["laptop-zone", "wifi", "wc", "power"],
+    },
+    hostSetup: {
+      spots: 30,
+      price: 10,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "08:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-090-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 1",
+        },
+        {
+          id: "seed-host-090-image-2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 2",
+        },
+        {
+          id: "seed-host-090-image-3",
+          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Studio Desk Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-090-review-1",
+          author: "Elin",
+          rating: 4,
+          date: "04.02.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-090-review-2",
+          author: "Noah",
+          rating: 5,
+          date: "24.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-090-review-3",
+          author: "Elin",
+          rating: 4,
+          date: "19.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-091",
+    email: "hello@urban-hub-space-st-gallen.ch",
+    avatarUrl: null,
+    createdAt: "2026-03-22T10:32:19.475Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Urban Lounge St. Gallen AG",
+      phone: "+41 21 177 87 91",
+      locationName: "Urban Hub Space",
+      address: "Pilatusstrasse 71",
+      city: "St. Gallen",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://urban-hub-space-st-gallen.ch",
+      instagram: "https://www.instagram.com/urban-hub-space-st-gallen",
+      amenities: ["wifi", "wc", "power"],
+    },
+    hostSetup: {
+      spots: 31,
+      price: 29,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-091-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 1",
+        },
+        {
+          id: "seed-host-091-image-2",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 2",
+        },
+        {
+          id: "seed-host-091-image-3",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Hub Space Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-091-review-1",
+          author: "Noah",
+          rating: 4,
+          date: "24.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-092",
+    email: "hello@metro-workspace-lugano.ch",
+    avatarUrl: null,
+    createdAt: "2026-02-25T13:10:14.256Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Metro Lounge Lugano AG",
+      phone: "+41 61 610 78 92",
+      locationName: "Metro Workspace",
+      address: "Marktgasse 73",
+      city: "Lugano",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://metro-workspace-lugano.ch",
+      instagram: "https://www.instagram.com/metro-workspace-lugano",
+      amenities: ["wifi", "wc", "laptop-zone", "power"],
+    },
+    hostSetup: {
+      spots: 32,
+      price: 23,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-092-image-1",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 1",
+        },
+        {
+          id: "seed-host-092-image-2",
+          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 2",
+        },
+        {
+          id: "seed-host-092-image-3",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Metro Workspace Bild 3",
+        },
+      ],
+      reviews: [],
+    },
+  },
+
+  {
+    uid: "seed-host-093",
+    email: "hello@urban-desk-house-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-28T22:52:45.479Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Urban Bar Lausanne AG",
+      phone: "+41 61 199 43 93",
+      locationName: "Urban Desk House",
+      address: "Clarastrasse 107",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://urban-desk-house-lausanne.ch",
+      instagram: "https://www.instagram.com/urban-desk-house-lausanne",
+      amenities: ["laptop-zone", "wifi"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 9,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "3h",
+    },
+    hostAvailability: {
+      days: ["tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-093-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 1",
+        },
+        {
+          id: "seed-host-093-image-2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 2",
+        },
+        {
+          id: "seed-host-093-image-3",
+          url: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200&auto=format&fit=crop",
+          alt: "Urban Desk House Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-093-review-1",
+          author: "Sara",
+          rating: 5,
+          date: "11.01.2026",
+          text: "Ideal für konzentriertes Arbeiten ohne viel Ablenkung.",
+        },
+        {
+          id: "seed-host-093-review-2",
+          author: "Mila",
+          rating: 4,
+          date: "15.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-093-review-3",
+          author: "Sara",
+          rating: 5,
+          date: "18.01.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-094",
+    email: "hello@studio-desk-club-neuchatel.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-11T06:22:34.452Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Studio Restaurant Neuchâtel GmbH",
+      phone: "+41 91 558 42 94",
+      locationName: "Studio Desk Club",
+      address: "Baarerstrasse 14",
+      city: "Neuchâtel",
+    },
+    hostLocation: {
+      category: "restaurant",
+      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://studio-desk-club-neuchatel.ch",
+      instagram: "https://www.instagram.com/studio-desk-club-neuchatel",
+      amenities: ["laptop-zone", "wifi", "wc"],
+    },
+    hostSetup: {
+      spots: 8,
+      price: 26,
+      marked: false,
+      laptopZoneOnly: true,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "08:00",
+      to: "17:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-094-image-1",
+          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 1",
+        },
+        {
+          id: "seed-host-094-image-2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 2",
+        },
+        {
+          id: "seed-host-094-image-3",
+          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk Club Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-094-review-1",
+          author: "Marco",
+          rating: 5,
+          date: "08.04.2026",
+          text: "Top Mischung aus Komfort, WLAN und guter Lage.",
+        },
+        {
+          id: "seed-host-094-review-2",
+          author: "Sofia",
+          rating: 5,
+          date: "10.01.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-095",
+    email: "hello@south-desk-house-zug.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-08T04:01:16.126Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "South Bar Zug AG",
+      phone: "+41 21 445 75 95",
+      locationName: "South Desk House",
+      address: "Clarastrasse 17",
+      city: "Zug",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Laptop-freundlicher Spot mit entspannter Stimmung und solider Infrastruktur für Remote Work.",
+      website: "https://south-desk-house-zug.ch",
+      instagram: "https://www.instagram.com/south-desk-house-zug",
+      amenities: ["power", "wc", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 14,
+      price: 16,
+      marked: false,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "20:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: true,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-095-image-1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 1",
+        },
+        {
+          id: "seed-host-095-image-2",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 2",
+        },
+        {
+          id: "seed-host-095-image-3",
+          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
+          alt: "South Desk House Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-095-review-1",
+          author: "David",
+          rating: 4,
+          date: "01.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
+        },
+        {
+          id: "seed-host-095-review-2",
+          author: "Mila",
+          rating: 5,
+          date: "10.03.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-096",
+    email: "hello@loft-workspace-lausanne.ch",
+    avatarUrl: null,
+    createdAt: "2025-12-22T08:41:04.735Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Loft Bar Lausanne AG",
+      phone: "+41 31 674 13 96",
+      locationName: "Loft Workspace",
+      address: "Seefeldstrasse 29",
+      city: "Lausanne",
+    },
+    hostLocation: {
+      category: "bar",
+      description: "Moderner Bar mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://loft-workspace-lausanne.ch",
+      instagram: "https://www.instagram.com/loft-workspace-lausanne",
+      amenities: ["wifi", "power"],
+    },
+    hostSetup: {
+      spots: 22,
+      price: 30,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "2h",
+    },
+    hostAvailability: {
+      days: ["thu", "fri", "sat", "sun"],
+      from: "07:00",
+      to: "18:00",
+      recurring: true,
+      gracePeriod: 5,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
+    },
+    hostContent: {
+      gallery: [
+        {
+          id: "seed-host-096-image-1",
+          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Workspace Bild 1",
+        },
+        {
+          id: "seed-host-096-image-2",
+          url: "https://images.unsplash.com/photo-1497366412874-3415097a27e7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Workspace Bild 2",
+        },
+        {
+          id: "seed-host-096-image-3",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Loft Workspace Bild 3",
+        },
+      ],
+      reviews: [
+        {
+          id: "seed-host-096-review-1",
+          author: "Noah",
+          rating: 4,
+          date: "15.04.2026",
+          text: "Würde ich jederzeit wieder buchen.",
+        },
+        {
+          id: "seed-host-096-review-2",
+          author: "David",
+          rating: 5,
+          date: "03.01.2026",
+          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+        },
+        {
+          id: "seed-host-096-review-3",
+          author: "Noah",
+          rating: 5,
+          date: "09.02.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+      ],
+    },
+  },
+
+  {
+    uid: "seed-host-097",
+    email: "hello@lake-dayspace-bern.ch",
+    avatarUrl: null,
+    createdAt: "2026-01-08T17:27:24.779Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
+    hostProfile: {
+      operatorName: "Lake Lounge Bern AG",
+      phone: "+41 61 168 34 97",
+      locationName: "Lake Dayspace",
+      address: "Seefeldstrasse 119",
+      city: "Bern",
+    },
+    hostLocation: {
+      category: "hotel-lounge",
+      description: "Moderner Hotel Lounge mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://lake-dayspace-bern.ch",
+      instagram: "https://www.instagram.com/lake-dayspace-bern",
+      amenities: ["wc", "power", "laptop-zone"],
+    },
+    hostSetup: {
+      spots: 6,
+      price: 12,
+      marked: true,
+      laptopZoneOnly: false,
+      slotDuration: "4h",
+    },
+    hostAvailability: {
+      days: ["mon", "wed", "thu", "fri", "sat"],
+      from: "09:00",
+      to: "21:00",
+      recurring: true,
+      gracePeriod: 15,
+      extendAllowed: false,
+    },
+    hostRules: {
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-097-image-1",
-          url: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 1",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Dayspace Bild 1",
         },
         {
           id: "seed-host-097-image-2",
-          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 2",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Dayspace Bild 2",
         },
         {
           id: "seed-host-097-image-3",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 3",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Lake Dayspace Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-097-review-1",
-          author: "Lena",
+          author: "Mila",
           rating: 4,
-          date: "27.01.2026",
+          date: "06.04.2026",
+          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+        },
+        {
+          id: "seed-host-097-review-2",
+          author: "Sara",
+          rating: 4,
+          date: "16.04.2026",
           text: "Hat alles, was man für Remote Work braucht.",
         },
       ],
@@ -6558,65 +6910,67 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-098",
-    email: "hello@south-desk-house-zug.ch",
+    email: "hello@riverside-lab-workspace-winterthur.ch",
     avatarUrl: null,
+    createdAt: "2026-03-02T07:34:34.416Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
     hostProfile: {
-      operatorName: "South Zug GmbH",
-      phone: "+41 44 901 98 98",
-      locationName: "South Desk House",
-      address: "Josefstrasse 35",
-      city: "Zug",
+      operatorName: "Riverside Restaurant Winterthur GmbH",
+      phone: "+41 31 732 75 98",
+      locationName: "Riverside Lab Workspace",
+      address: "Seefeldstrasse 3",
+      city: "Winterthur",
     },
     hostLocation: {
-      category: "other",
-      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
-      website: "https://south-desk-house-zug.ch",
-      instagram: "https://www.instagram.com/south-desk-house-zug",
-      amenities: ["wc", "laptop-zone", "wifi", "power"],
+      category: "restaurant",
+      description: "Moderner Restaurant mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
+      website: "https://riverside-lab-workspace-winterthur.ch",
+      instagram: "https://www.instagram.com/riverside-lab-workspace-winterthur",
+      amenities: ["power", "wc", "laptop-zone", "wifi"],
     },
     hostSetup: {
-      spots: 8,
-      price: 22,
-      marked: false,
+      spots: 21,
+      price: 29,
+      marked: true,
       laptopZoneOnly: true,
-      slotDuration: "3h",
+      slotDuration: "2h",
     },
     hostAvailability: {
-      days: ["mon", "tue", "wed"],
+      days: ["mon", "tue", "wed", "thu", "fri"],
       from: "09:00",
-      to: "19:00",
+      to: "17:00",
       recurring: true,
-      gracePeriod: 15,
-      extendAllowed: true,
+      gracePeriod: 10,
+      extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-098-image-1",
-          url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 1",
+          url: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 1",
         },
         {
           id: "seed-host-098-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 2",
+          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 2",
         },
         {
           id: "seed-host-098-image-3",
-          url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop",
-          alt: "South Desk House Bild 3",
+          url: "https://images.unsplash.com/photo-1523942839745-7848d9caa4a4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Riverside Lab Workspace Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-098-review-1",
-          author: "Lena",
+          author: "Sara",
           rating: 4,
-          date: "01.02.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+          date: "28.03.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
         },
       ],
     },
@@ -6624,56 +6978,58 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-099",
-    email: "hello@north-desk-club-lugano.ch",
+    email: "hello@studio-desk-house-neuchatel.ch",
     avatarUrl: null,
+    createdAt: "2026-02-23T07:34:14.120Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
     hostProfile: {
-      operatorName: "North Lugano GmbH",
-      phone: "+41 71 863 92 99",
-      locationName: "North Desk Club",
-      address: "Marktgasse 19",
-      city: "Lugano",
+      operatorName: "Studio Neuchâtel GmbH",
+      phone: "+41 41 590 93 99",
+      locationName: "Studio Desk House",
+      address: "Baarerstrasse 44",
+      city: "Neuchâtel",
     },
     hostLocation: {
       category: "other",
-      description: "Moderner Workspace mit stabiler Internetverbindung und ruhiger Arbeitszone für konzentriertes Arbeiten.",
-      website: "https://north-desk-club-lugano.ch",
-      instagram: "https://www.instagram.com/north-desk-club-lugano",
-      amenities: ["wifi", "power", "wc"],
+      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
+      website: "https://studio-desk-house-neuchatel.ch",
+      instagram: "https://www.instagram.com/studio-desk-house-neuchatel",
+      amenities: ["wc", "wifi", "power", "laptop-zone"],
     },
     hostSetup: {
-      spots: 14,
-      price: 28,
-      marked: false,
+      spots: 21,
+      price: 26,
+      marked: true,
       laptopZoneOnly: true,
-      slotDuration: "2h",
+      slotDuration: "3h",
     },
     hostAvailability: {
       days: ["mon", "tue", "wed"],
-      from: "07:00",
-      to: "21:00",
+      from: "10:00",
+      to: "18:00",
       recurring: true,
       gracePeriod: 20,
       extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-099-image-1",
-          url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk Club Bild 1",
+          url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk House Bild 1",
         },
         {
           id: "seed-host-099-image-2",
-          url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk Club Bild 2",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk House Bild 2",
         },
         {
           id: "seed-host-099-image-3",
-          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
-          alt: "North Desk Club Bild 3",
+          url: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
+          alt: "Studio Desk House Bild 3",
         },
       ],
       reviews: [
@@ -6681,15 +7037,15 @@ const hosts: SeedHost[] = [
           id: "seed-host-099-review-1",
           author: "Luca",
           rating: 4,
-          date: "06.01.2026",
-          text: "Hat alles, was man für Remote Work braucht.",
+          date: "08.03.2026",
+          text: "Würde ich jederzeit wieder buchen.",
         },
         {
           id: "seed-host-099-review-2",
-          author: "David",
+          author: "Sara",
           rating: 5,
-          date: "15.03.2026",
-          text: "Stylisch, sauber und super für ein paar produktive Stunden.",
+          date: "02.04.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
         },
       ],
     },
@@ -6697,77 +7053,95 @@ const hosts: SeedHost[] = [
 
   {
     uid: "seed-host-100",
-    email: "hello@riverside-workspace-zug.ch",
+    email: "hello@dock-hub-space-lugano.ch",
     avatarUrl: null,
+    createdAt: "2025-11-05T03:22:20.820Z",
+    updatedAt: "2026-04-18T15:21:08.984Z",
     hostProfile: {
-      operatorName: "Riverside Zug GmbH",
-      phone: "+41 22 428 25 100",
-      locationName: "Riverside Workspace",
-      address: "Spitalgasse 97",
-      city: "Zug",
+      operatorName: "Dock Restaurant Lugano GmbH",
+      phone: "+41 31 402 45 100",
+      locationName: "Dock Hub Space",
+      address: "Bahnhofstrasse 72",
+      city: "Lugano",
     },
     hostLocation: {
-      category: "other",
-      description: "Angenehme Location für produktive Sessions mit zuverlässigem WLAN und guter Tagesatmosphäre.",
-      website: "https://riverside-workspace-zug.ch",
-      instagram: "https://www.instagram.com/riverside-workspace-zug",
-      amenities: ["laptop-zone", "wc"],
+      category: "restaurant",
+      description: "Beliebter Treffpunkt für Freelancer und Professionals mit klaren Arbeitsbereichen.",
+      website: "https://dock-hub-space-lugano.ch",
+      instagram: "https://www.instagram.com/dock-hub-space-lugano",
+      amenities: ["laptop-zone", "wifi", "power", "wc"],
     },
     hostSetup: {
-      spots: 31,
+      spots: 24,
       price: 20,
       marked: true,
-      laptopZoneOnly: false,
-      slotDuration: "2h",
+      laptopZoneOnly: true,
+      slotDuration: "3h",
     },
     hostAvailability: {
-      days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+      days: ["tue", "wed", "thu", "fri", "sat"],
       from: "10:00",
       to: "21:00",
       recurring: true,
-      gracePeriod: 20,
-      extendAllowed: true,
+      gracePeriod: 5,
+      extendAllowed: false,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: ["booking-limit", "no-claim", "house-rules", "legal"],
     },
     hostContent: {
       gallery: [
         {
           id: "seed-host-100-image-1",
-          url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 1",
+          url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Hub Space Bild 1",
         },
         {
           id: "seed-host-100-image-2",
-          url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 2",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Hub Space Bild 2",
         },
         {
           id: "seed-host-100-image-3",
-          url: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=1200&auto=format&fit=crop",
-          alt: "Riverside Workspace Bild 3",
+          url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+          alt: "Dock Hub Space Bild 3",
         },
       ],
       reviews: [
         {
           id: "seed-host-100-review-1",
-          author: "Sofia",
-          rating: 5,
-          date: "28.01.2026",
-          text: "Die Stimmung war entspannt und das Team vor Ort sehr freundlich.",
+          author: "Jan",
+          rating: 4,
+          date: "24.01.2026",
+          text: "Würde ich jederzeit wieder buchen.",
         },
         {
           id: "seed-host-100-review-2",
-          author: "Mila",
+          author: "Marco",
           rating: 5,
-          date: "22.04.2026",
-          text: "Sehr angenehme Atmosphäre, schnelles WLAN und genug Ruhe zum Arbeiten.",
+          date: "21.01.2026",
+          text: "Hat alles, was man für Remote Work braucht.",
         },
       ],
     },
   },
 ];
+
+function getServiceAccount(): ServiceAccount {
+  const serviceAccountPath = resolve(process.cwd(), "lib/firebase/serviceAccountKey.json");
+  const file = readFileSync(serviceAccountPath, "utf8");
+  return JSON.parse(file) as ServiceAccount;
+}
+
+function getDb() {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert(getServiceAccount()),
+    });
+  }
+
+  return getFirestore();
+}
 
 function toAppProfile(host: SeedHost): AppProfile {
   return {
@@ -6775,11 +7149,12 @@ function toAppProfile(host: SeedHost): AppProfile {
     email: host.email,
     avatarUrl: host.avatarUrl,
     role: "host",
+    accessRole: "user",
     authMethod: "email",
     onboardingCompleted: true,
-    onboardingStep: "/onboarding/host/success",
-    createdAt: now,
-    updatedAt: now,
+    onboardingStep: "/",
+    createdAt: host.createdAt,
+    updatedAt: host.updatedAt,
     hostProfile: host.hostProfile,
     hostLocation: host.hostLocation,
     hostSetup: host.hostSetup,
@@ -6789,26 +7164,22 @@ function toAppProfile(host: SeedHost): AppProfile {
   };
 }
 
-async function seedHosts() {
-  console.log("Starting host seed...");
+async function seedHostsToFirestore() {
+  const db = getDb();
 
-  const batch = adminDb.batch();
-
-  for (const host of hosts) {
-    const ref = adminDb.collection("users").doc(host.uid);
-    batch.set(ref, toAppProfile(host), { merge: true });
+  if (!seedHosts.length) {
+    console.log("No seed hosts found.");
+    return;
   }
 
-  await batch.commit();
+  for (const host of seedHosts) {
+    const profile = toAppProfile(host);
 
-  console.log(`Seeded ${hosts.length} hosts.`);
+    await db.collection("users").doc(profile.uid).set(profile, { merge: true });
+    console.log(`Seeded host: ${profile.uid}`);
+  }
+
+  console.log(`Done. Seeded ${seedHosts.length} hosts.`);
 }
 
-seedHosts()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((error: unknown) => {
-    console.error("Failed to seed hosts:", error);
-    process.exit(1);
-  });
+void seedHostsToFirestore();

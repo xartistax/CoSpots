@@ -2,12 +2,14 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 import { db } from "@/lib/firebase/client";
 import {
+  AccessRole,
   AppProfile,
   AuthMethod,
   GuestPreferencesData,
   GuestProfileData,
   GuestRulesData,
   HostAvailabilityData,
+  HostContentData,
   HostLocationData,
   HostProfileData,
   HostRulesData,
@@ -34,7 +36,8 @@ export async function createUserProfile(params: { uid: string; email: string; av
     email: params.email,
     avatarUrl: params.avatarUrl ?? null,
     role: null,
-    authMethod: params.authMethod,
+    accessRole: "user" satisfies AccessRole,
+    authMethod: null,
     onboardingCompleted: false,
     onboardingStep: "/onboarding",
     createdAt: now,
@@ -73,7 +76,7 @@ export async function saveGuestPreferences(params: { uid: string; guestPreferenc
 export async function saveGuestRules(params: { uid: string; guestRules: GuestRulesData }) {
   await updateDoc(doc(db, "users", params.uid), {
     guestRules: params.guestRules,
-    onboardingCompleted: true,
+    onboardingCompleted: false,
     onboardingStep: "/onboarding/guest/success",
     updatedAt: new Date().toISOString(),
   } satisfies Partial<AppProfile>);
@@ -114,8 +117,31 @@ export async function saveHostAvailability(params: { uid: string; hostAvailabili
 export async function saveHostRules(params: { uid: string; hostRules: HostRulesData }) {
   await updateDoc(doc(db, "users", params.uid), {
     hostRules: params.hostRules,
-    onboardingCompleted: true,
+    onboardingCompleted: false,
     onboardingStep: "/onboarding/host/success",
+    updatedAt: new Date().toISOString(),
+  } satisfies Partial<AppProfile>);
+}
+
+export async function finalizeGuestOnboarding(uid: string) {
+  await updateDoc(doc(db, "users", uid), {
+    onboardingCompleted: true,
+    onboardingStep: "/",
+    updatedAt: new Date().toISOString(),
+  } satisfies Partial<AppProfile>);
+}
+
+export async function finalizeHostOnboarding(uid: string) {
+  await updateDoc(doc(db, "users", uid), {
+    onboardingCompleted: true,
+    onboardingStep: "/",
+    updatedAt: new Date().toISOString(),
+  } satisfies Partial<AppProfile>);
+}
+
+export async function saveHostContent(params: { uid: string; hostContent: HostContentData }) {
+  await updateDoc(doc(db, "users", params.uid), {
+    hostContent: params.hostContent,
     updatedAt: new Date().toISOString(),
   } satisfies Partial<AppProfile>);
 }

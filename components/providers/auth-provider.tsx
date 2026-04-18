@@ -1,7 +1,7 @@
 "use client";
 
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { auth, db } from "@/lib/firebase/client";
@@ -12,8 +12,7 @@ type AuthContextValue = {
   firebaseUser: User | null;
   profile: AppProfile | null;
   loading: boolean;
-  isAuthenticated: boolean;
-  isOnboarded: boolean;
+  refreshProfile: () => Promise<AppProfile | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -33,10 +32,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  async function refreshProfile(): Promise<AppProfile | null> {
+    if (!auth.currentUser) {
+      setProfile(null);
+      return null;
+    }
+
+    const snapshot = await getDoc(doc(db, "users", auth.currentUser.uid));
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    const nextProfile = snapshot.data() as AppProfile;
+    setProfile(nextProfile);
+    return nextProfile;
+  }
+
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       setFirebaseUser(user);
 
@@ -64,6 +80,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 avatarUrl: user.photoURL ?? null,
                 authMethod: getAuthMethod(user),
               });
+
+              const createdSnapshot = await getDoc(profileRef);
+
+              if (!createdSnapshot.exists()) {
+                setProfile(null);
+                setLoading(false);
+                return;
+              }
+
+              setProfile(createdSnapshot.data() as AppProfile);
+              setLoading(false);
               return;
             }
 
@@ -99,8 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firebaseUser,
       profile,
       loading,
-      isAuthenticated: Boolean(firebaseUser),
-      isOnboarded: Boolean(profile?.onboardingCompleted),
+      refreshProfile,
     }),
     [firebaseUser, profile, loading],
   );

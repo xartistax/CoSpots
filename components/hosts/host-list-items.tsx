@@ -5,7 +5,6 @@ import Image from "next/image";
 import type { AppProfile } from "@/types/user-profile";
 import { AMENITY_ICONS } from "@/lib/amenities-icons";
 import { cn } from "@/lib/utils";
-import { title } from "process";
 
 type HostListItemsProps = {
   hosts: AppProfile[];
@@ -37,7 +36,7 @@ export function HostListItems({ hosts, selectedHostId, onSelectHost, onHoverHost
 
   return (
     <div className="grid gap-3">
-      {hosts.map((host) => {
+      {hosts.map((host, index) => {
         const isSelected = host.uid === selectedHostId;
         const previewImage = host.hostContent?.gallery?.[0]?.url ?? null;
         const averageRating = getAverageRating(host);
@@ -62,17 +61,16 @@ export function HostListItems({ hosts, selectedHostId, onSelectHost, onHoverHost
               <div className="grid gap-4 p-4 sm:grid-cols-[120px_minmax(0,1fr)]">
                 <div className="overflow-hidden rounded-xl bg-muted">
                   {previewImage ? (
-                    <>
-                      <div className="relative h-28 w-full overflow-hidden rounded-xl sm:h-full">
-                        <Image
-                          src={previewImage}
-                          alt={host.hostProfile?.locationName ?? "Host"}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          sizes="(max-width: 640px) 100vw, 120px"
-                        />
-                      </div>
-                    </>
+                    <div className="relative h-28 w-full sm:h-full">
+                      <Image
+                        src={previewImage}
+                        alt={host.hostProfile?.locationName ?? "Host"}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 120px"
+                        priority={index === 0}
+                      />
+                    </div>
                   ) : (
                     <div className="flex h-28 items-center justify-center text-xs text-muted-foreground sm:h-full">No image</div>
                   )}

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CalendarDays, Clock3, Repeat2, TimerReset } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -81,9 +82,12 @@ export default function HostAvailabilityPage() {
       description={onboardingConfig.host.availability.description}
       step={onboardingConfig.host.availability.step}
     >
-      <form onSubmit={onSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <Label>{onboardingConfig.host.availability.fields.weekdayOptions.label}</Label>
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="size-4 text-muted-foreground" />
+            <Label className="text-sm font-medium">{onboardingConfig.host.availability.fields.weekdayOptions.label}</Label>
+          </div>
 
           <Controller
             control={control}
@@ -94,7 +98,11 @@ export default function HostAvailabilityPage() {
                   const checked = field.value.includes(day.id);
 
                   return (
-                    <label key={day.id} htmlFor={day.id} className="flex items-center gap-3 rounded-lg border p-4">
+                    <label
+                      key={day.id}
+                      htmlFor={day.id}
+                      className="flex items-center gap-3 rounded-[20px] border p-4 transition hover:border-foreground/20 hover:bg-muted/30"
+                    >
                       <Checkbox
                         id={day.id}
                         checked={checked}
@@ -119,71 +127,113 @@ export default function HostAvailabilityPage() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.availability.fields.from.id}>{onboardingConfig.host.availability.fields.from.label}</Label>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Clock3 className="size-4 text-muted-foreground" />
+              <Label htmlFor={onboardingConfig.host.availability.fields.from.id} className="text-sm font-medium">
+                {onboardingConfig.host.availability.fields.from.label}
+              </Label>
+            </div>
+
             <Input
               id={onboardingConfig.host.availability.fields.from.id}
               type="time"
-              className={errors.from ? "border-destructive" : ""}
+              className={["h-12 rounded-2xl border-border/80 px-4 shadow-none", errors.from ? "border-destructive" : ""].join(" ")}
               {...register("from")}
             />
+
             {errors.from ? <p className="text-sm text-destructive">{errors.from.message}</p> : null}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.availability.fields.to.id}>{onboardingConfig.host.availability.fields.to.label}</Label>
-            <Input id={onboardingConfig.host.availability.fields.to.id} type="time" className={errors.to ? "border-destructive" : ""} {...register("to")} />
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Clock3 className="size-4 text-muted-foreground" />
+              <Label htmlFor={onboardingConfig.host.availability.fields.to.id} className="text-sm font-medium">
+                {onboardingConfig.host.availability.fields.to.label}
+              </Label>
+            </div>
+
+            <Input
+              id={onboardingConfig.host.availability.fields.to.id}
+              type="time"
+              className={["h-12 rounded-2xl border-border/80 px-4 shadow-none", errors.to ? "border-destructive" : ""].join(" ")}
+              {...register("to")}
+            />
+
             {errors.to ? <p className="text-sm text-destructive">{errors.to.message}</p> : null}
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border p-4">
-          <div className="space-y-1">
-            <Label htmlFor={onboardingConfig.host.availability.fields.recurring.id}>{onboardingConfig.host.availability.fields.recurring.label}</Label>
-            <p className="text-sm text-muted-foreground">{onboardingConfig.host.availability.fields.recurring.description}</p>
-          </div>
+        <div className="rounded-[24px] border p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-muted">
+                <Repeat2 className="size-4" />
+              </div>
 
-          <Controller
-            control={control}
-            name="recurring"
-            render={({ field }) => (
-              <Switch id={onboardingConfig.host.availability.fields.recurring.id} checked={field.value} onCheckedChange={field.onChange} />
-            )}
-          />
+              <div className="space-y-1">
+                <Label htmlFor={onboardingConfig.host.availability.fields.recurring.id} className="text-sm font-medium">
+                  {onboardingConfig.host.availability.fields.recurring.label}
+                </Label>
+                <p className="text-sm leading-6 text-muted-foreground">{onboardingConfig.host.availability.fields.recurring.description}</p>
+              </div>
+            </div>
+
+            <Controller
+              control={control}
+              name="recurring"
+              render={({ field }) => (
+                <Switch id={onboardingConfig.host.availability.fields.recurring.id} checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.availability.fields.gracePeriod.id}>{onboardingConfig.host.availability.fields.gracePeriod.label}</Label>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <TimerReset className="size-4 text-muted-foreground" />
+              <Label htmlFor={onboardingConfig.host.availability.fields.gracePeriod.id} className="text-sm font-medium">
+                {onboardingConfig.host.availability.fields.gracePeriod.label}
+              </Label>
+            </div>
+
             <Input
               id={onboardingConfig.host.availability.fields.gracePeriod.id}
               type="number"
               min={0}
               step={1}
               placeholder={onboardingConfig.host.availability.fields.gracePeriod.placeholder}
-              className={errors.gracePeriod ? "border-destructive" : ""}
+              className={["h-12 rounded-2xl border-border/80 px-4 shadow-none", errors.gracePeriod ? "border-destructive" : ""].join(" ")}
               {...register("gracePeriod", { valueAsNumber: true })}
             />
+
             {errors.gracePeriod ? <p className="text-sm text-destructive">{errors.gracePeriod.message}</p> : null}
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-1">
-              <Label htmlFor={onboardingConfig.host.availability.fields.extend.id}>{onboardingConfig.host.availability.fields.extend.label}</Label>
-              <p className="text-sm text-muted-foreground">{onboardingConfig.host.availability.fields.extend.description}</p>
-            </div>
+          <div className="rounded-[24px] border p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <Label htmlFor={onboardingConfig.host.availability.fields.extend.id} className="text-sm font-medium">
+                  {onboardingConfig.host.availability.fields.extend.label}
+                </Label>
+                <p className="text-sm leading-6 text-muted-foreground">{onboardingConfig.host.availability.fields.extend.description}</p>
+              </div>
 
-            <Controller
-              control={control}
-              name="extendAllowed"
-              render={({ field }) => <Switch id={onboardingConfig.host.availability.fields.extend.id} checked={field.value} onCheckedChange={field.onChange} />}
-            />
+              <Controller
+                control={control}
+                name="extendAllowed"
+                render={({ field }) => (
+                  <Switch id={onboardingConfig.host.availability.fields.extend.id} checked={field.value} onCheckedChange={field.onChange} />
+                )}
+              />
+            </div>
           </div>
         </div>
 
         {errors.root ? <p className="text-sm text-destructive">{errors.root.message}</p> : null}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="h-12 w-full rounded-2xl text-sm font-medium" disabled={isSubmitting}>
           {onboardingConfig.host.availability.cta.submit}
         </Button>
       </form>

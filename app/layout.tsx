@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { geistMono, geistSans, inter } from "@/lib/constants/site";
 import { siteConfig } from "@/lib/config/site";
+import { AuthSessionSync } from "@/components/providers/auth-session-sync";
+import { Navbar } from "@/components/layout/navbar";
+import { MobileNav } from "@/components/layout/mobile-nav";
+import { AuthGuard } from "@/components/guards/auth-guard";
 
 export const metadata: Metadata = {
   title: siteConfig.name,
@@ -60,7 +64,12 @@ export default async function RootLayout({
   return (
     <html lang="de" className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}>
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AuthSessionSync />
+          <Navbar />
+          <AuthGuard>{children}</AuthGuard>
+          <MobileNav />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -8,7 +8,8 @@
     "start": "next start",
     "seed:hosts": "tsx scripts/seed-hosts.ts",
     "generate:hosts": "tsx scripts/generate-hosts.ts",
-    "generate:hosts:100": "tsx scripts/generate-hosts.ts 100"
+    "generate:hosts:100": "tsx scripts/generate-hosts.ts 100",
+    "set:admin": "tsx scripts/set-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

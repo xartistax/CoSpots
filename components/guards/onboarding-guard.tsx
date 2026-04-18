@@ -12,25 +12,8 @@ type OnboardingGuardProps = {
 
 const GUEST_SUCCESS_PATH = "/onboarding/guest/success";
 const HOST_SUCCESS_PATH = "/onboarding/host/success";
-const DASHBOARD_PATH = "/dashboard";
-
-function normalizeOnboardingStep(step: string | null | undefined): string {
-  if (!step) {
-    return "/onboarding";
-  }
-
-  const trimmed = step.trim();
-
-  if (!trimmed) {
-    return "/onboarding";
-  }
-
-  if (trimmed.startsWith("/")) {
-    return trimmed;
-  }
-
-  return `/${trimmed}`;
-}
+const DEFAULT_ONBOARDING_PATH = "/onboarding";
+const APP_HOME_PATH = "/";
 
 function normalizePath(path: string): string {
   if (path.length > 1 && path.endsWith("/")) {
@@ -40,7 +23,21 @@ function normalizePath(path: string): string {
   return path;
 }
 
-function RedirectScreen() {
+function normalizeStep(step: string | null | undefined): string {
+  if (!step) {
+    return DEFAULT_ONBOARDING_PATH;
+  }
+
+  const trimmed = step.trim();
+
+  if (!trimmed) {
+    return DEFAULT_ONBOARDING_PATH;
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function LoadingScreen() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <Spinner />
@@ -49,61 +46,57 @@ function RedirectScreen() {
 }
 
 export function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { loading, firebaseUser, profile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const { loading, firebaseUser, profile } = useAuth();
 
   const currentPath = normalizePath(pathname);
-  const currentStep = normalizePath(normalizeOnboardingStep(profile?.onboardingStep));
-
+  const currentStep = normalizePath(normalizeStep(profile?.onboardingStep));
+  const isSuccessPath = currentPath === GUEST_SUCCESS_PATH || currentPath === HOST_SUCCESS_PATH;
   const isProfilePending = !loading && !!firebaseUser && !profile;
-  const shouldRedirectToLogin = !loading && !firebaseUser;
-
-  const canViewSuccessPage =
-    !loading &&
-    !!firebaseUser &&
-    !!profile &&
-    profile.onboardingCompleted &&
-    ((currentStep === GUEST_SUCCESS_PATH && currentPath === GUEST_SUCCESS_PATH) || (currentStep === HOST_SUCCESS_PATH && currentPath === HOST_SUCCESS_PATH));
-
-  const shouldRedirectCompletedUserToDashboard = !loading && !!firebaseUser && !!profile && profile.onboardingCompleted && !canViewSuccessPage;
-
-  const shouldRedirectIncompleteUserToCurrentStep = !loading && !!firebaseUser && !!profile && !profile.onboardingCompleted && currentPath !== currentStep;
 
   useEffect(() => {
     if (loading || isProfilePending) {
       return;
     }
 
-    if (shouldRedirectToLogin) {
+    if (!firebaseUser) {
       router.replace("/auth/sign-in");
       return;
     }
 
-    if (shouldRedirectCompletedUserToDashboard) {
-      router.replace(DASHBOARD_PATH);
+    if (!profile) {
       return;
     }
 
-    if (shouldRedirectIncompleteUserToCurrentStep) {
-      router.replace(currentStep);
+    if (!profile.onboardingCompleted) {
+      if (currentPath !== currentStep) {
+        router.replace(currentStep);
+      }
+      return;
     }
-  }, [
-    loading,
-    isProfilePending,
-    shouldRedirectToLogin,
-    shouldRedirectCompletedUserToDashboard,
-    shouldRedirectIncompleteUserToCurrentStep,
-    currentStep,
-    router,
-  ]);
+
+    if (isSuccessPath) {
+      return;
+    }
+
+    router.replace(APP_HOME_PATH);
+  }, [loading, isProfilePending, firebaseUser, profile, currentPath, currentStep, isSuccessPath, router]);
 
   if (loading || isProfilePending) {
-    return <RedirectScreen />;
+    return <LoadingScreen />;
   }
 
-  if (shouldRedirectToLogin || shouldRedirectCompletedUserToDashboard || shouldRedirectIncompleteUserToCurrentStep) {
-    return <RedirectScreen />;
+  if (!firebaseUser || !profile) {
+    return <LoadingScreen />;
+  }
+
+  if (!profile.onboardingCompleted && currentPath !== currentStep) {
+    return <LoadingScreen />;
+  }
+
+  if (profile.onboardingCompleted && !isSuccessPath) {
+    return <LoadingScreen />;
   }
 
   return <>{children}</>;

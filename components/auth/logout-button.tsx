@@ -1,6 +1,7 @@
 "use client";
 
 import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { auth } from "@/lib/firebase/client";
 import { Spinner } from "@/components/ui/spinner";
 
 export function LogoutButton() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
@@ -16,7 +18,14 @@ export function LogoutButton() {
     setLoading(true);
 
     try {
+      await fetch("/api/auth/session", {
+        method: "DELETE",
+      });
+
       await signOut(auth);
+
+      router.replace("/auth/sign-in");
+      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
       setLoading(false);

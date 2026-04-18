@@ -7,6 +7,8 @@ type SeedHost = {
   uid: string;
   email: string;
   avatarUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
   hostProfile: HostProfileData;
   hostLocation: HostLocationData;
   hostSetup: HostSetupData;
@@ -15,7 +17,7 @@ type SeedHost = {
   hostContent: HostContentData;
 };
 
-const RULE_IDS: HostRulesData["accepted"] = ["booking-limit", "no-claim", "house-rules", "legal"];
+const RULE_IDS = ["booking-limit", "no-claim", "house-rules", "legal"] as const;
 
 const cities = [
   { city: "Zürich", prefix: "zuerich" },
@@ -33,7 +35,6 @@ const cities = [
 ] as const;
 
 const categories = ["cafe", "bar", "restaurant", "hotel-lounge", "other"] as const;
-
 const amenitiesPool = ["wifi", "power", "laptop-zone", "wc"] as const;
 const slotDurations = ["2h", "3h", "4h"] as const;
 
@@ -109,7 +110,6 @@ const imagePool = [
   "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=1200&auto=format&fit=crop",
@@ -130,10 +130,12 @@ function pickOne<T>(items: readonly T[]): T {
 
 function shuffle<T>(items: readonly T[]): T[] {
   const copy = [...items];
+
   for (let index = copy.length - 1; index > 0; index -= 1) {
     const swapIndex = randomInt(0, index);
     [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
   }
+
   return copy;
 }
 
@@ -175,6 +177,16 @@ function buildPhone(seedIndex: number): string {
   return `+41 ${area} ${randomInt(100, 999)} ${randomInt(10, 99)} ${String(seedIndex).padStart(2, "0")}`;
 }
 
+function randomDateWithinLastMonths(months: number): string {
+  const now = new Date();
+  const past = new Date();
+  past.setMonth(now.getMonth() - months);
+
+  const randomTime = past.getTime() + Math.random() * (now.getTime() - past.getTime());
+
+  return new Date(randomTime).toISOString();
+}
+
 function buildGallery(uid: string, locationName: string): HostContentData["gallery"] {
   return pickMany(imagePool, 3).map((url, index) => ({
     id: `${uid}-image-${index + 1}`,
@@ -202,6 +214,7 @@ function createHost(seedNumber: number): SeedHost {
   const operatorPrefix = pickOne(operatorPrefixes);
   const locationSuffix = pickOne(locationNames);
   const locationName = `${operatorPrefix} ${locationSuffix}`;
+
   const operatorName =
     category === "cafe"
       ? `${operatorPrefix} Café ${cityConfig.city} GmbH`
@@ -221,13 +234,15 @@ function createHost(seedNumber: number): SeedHost {
   const uid = `seed-host-${id}`;
   const emailName = `${operatorPrefix}-${locationSuffix}-${cityConfig.prefix}`.toLowerCase().replaceAll(" ", "-");
 
-  const gallery = buildGallery(uid, locationName);
-  const reviews = buildReviews(uid);
+  const createdAt = randomDateWithinLastMonths(6);
+  const updatedAt = new Date().toISOString();
 
   return {
     uid,
     email: `hello@${emailName}.ch`,
     avatarUrl: null,
+    createdAt,
+    updatedAt,
     hostProfile: {
       operatorName,
       phone: buildPhone(seedNumber),
@@ -258,11 +273,11 @@ function createHost(seedNumber: number): SeedHost {
       extendAllowed: Math.random() > 0.4,
     },
     hostRules: {
-      accepted: RULE_IDS,
+      accepted: [...RULE_IDS],
     },
     hostContent: {
-      gallery,
-      reviews,
+      gallery: buildGallery(uid, locationName),
+      reviews: buildReviews(uid),
     },
   };
 }
@@ -272,6 +287,8 @@ function formatHost(host: SeedHost): string {
   uid: ${JSON.stringify(host.uid)},
   email: ${JSON.stringify(host.email)},
   avatarUrl: null,
+  createdAt: ${JSON.stringify(host.createdAt)},
+  updatedAt: ${JSON.stringify(host.updatedAt)},
   hostProfile: {
     operatorName: ${JSON.stringify(host.hostProfile.operatorName)},
     phone: ${JSON.stringify(host.hostProfile.phone)},
@@ -302,7 +319,7 @@ function formatHost(host: SeedHost): string {
     extendAllowed: ${String(host.hostAvailability.extendAllowed)},
   },
   hostRules: {
-    accepted: RULE_IDS,
+    accepted: ${JSON.stringify([...host.hostRules.accepted])},
   },
   hostContent: {
     gallery: ${JSON.stringify(host.hostContent.gallery, null, 2)

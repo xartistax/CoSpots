@@ -1,5 +1,6 @@
 export type UserRole = "guest" | "host";
 export type AuthMethod = "google" | "email";
+export type AccessRole = "user" | "admin";
 
 export type GuestProfileData = {
   industry: string;
@@ -81,6 +82,7 @@ export type AppProfile = {
   email: string;
   avatarUrl: string | null;
   role: UserRole | null;
+  accessRole: AccessRole | null;
   authMethod: AuthMethod | null;
   onboardingCompleted: boolean;
   onboardingStep: string | null;

@@ -2,44 +2,37 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, updateDoc } from "firebase/firestore";
 
 import { OnboardingShell } from "@/app/onboarding/onboarding-shell";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/firebase/client";
 import { onboardingConfig } from "@/lib/config/onboarding";
+import { finalizeGuestOnboarding } from "@/lib/firebase/user-profile";
 
-const DASHBOARD_PATH = "/dashboard";
+const NEXT_PATH = "/";
+const AUTO_REDIRECT_MS = 10_000;
 
 export default function GuestSuccessPage() {
   const router = useRouter();
   const { firebaseUser } = useAuth();
-  const hasCommittedRef = useRef(false);
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    if (!firebaseUser || hasCommittedRef.current) {
+    if (!firebaseUser || hasRunRef.current) {
       return;
     }
 
-    hasCommittedRef.current = true;
+    hasRunRef.current = true;
 
-    const commitSuccess = async () => {
-      try {
-        await updateDoc(doc(db, "users", firebaseUser.uid), {
-          onboardingStep: DASHBOARD_PATH,
-        });
-      } catch (error) {
-        console.error("Failed to finalize onboarding success step:", error);
-      }
-    };
-
-    void commitSuccess();
+    void finalizeGuestOnboarding(firebaseUser.uid).catch((error) => {
+      console.error("Finalize guest onboarding failed:", error);
+    });
 
     const timeout = window.setTimeout(() => {
-      router.replace(DASHBOARD_PATH);
-    }, 6000);
+      router.replace(NEXT_PATH);
+      router.refresh();
+    }, AUTO_REDIRECT_MS);
 
     return () => window.clearTimeout(timeout);
   }, [firebaseUser, router]);
@@ -49,7 +42,13 @@ export default function GuestSuccessPage() {
       <div className="flex flex-col gap-4">
         <Alert variant="success">{onboardingConfig.guest.success.alert}</Alert>
 
-        <Button className="w-full" onClick={() => router.replace(DASHBOARD_PATH)}>
+        <Button
+          className="h-12 w-full rounded-2xl text-sm font-medium"
+          onClick={() => {
+            router.replace(NEXT_PATH);
+            router.refresh();
+          }}
+        >
           {onboardingConfig.guest.success.cta.primary}
         </Button>
       </div>

@@ -99,7 +99,7 @@ export const onboardingConfig = {
 
   host: {
     profile: {
-      step: "Schritt 3 von 8",
+      step: "Schritt 1 von 5",
       title: "Betreiberprofil",
       description: "Erfasse die wichtigsten Informationen zu dir und deiner Location.",
       fields: {
@@ -135,7 +135,7 @@ export const onboardingConfig = {
     },
 
     location: {
-      step: "Schritt 4 von 8",
+      step: "Schritt 2 von 5",
       title: "Location Details",
       description: "Beschreibe deine Location und vorhandene Ausstattung.",
       fields: {
@@ -169,7 +169,7 @@ export const onboardingConfig = {
     },
 
     setup: {
-      step: "Schritt 5 von 8",
+      step: "Schritt 3 von 5",
       title: "CoSpot Setup",
       description: "Definiere Plätze, Regeln und die Standarddauer deiner Slots.",
       fields: {
@@ -202,7 +202,7 @@ export const onboardingConfig = {
     },
 
     availability: {
-      step: "Schritt 6 von 8",
+      step: "Schritt 4 von 5",
       title: "Verfügbarkeiten",
       description: "Lege fest, wann und wie oft deine CoSpots verfügbar sind.",
       fields: {
@@ -239,7 +239,7 @@ export const onboardingConfig = {
     },
 
     rules: {
-      step: "Schritt 7 von 8",
+      step: "Schritt 5 von 5",
       title: "Regeln & Auszahlung",
       description: "Halte deine Hausregeln fest und bestätige die rechtlichen Punkte.",
       fields: {

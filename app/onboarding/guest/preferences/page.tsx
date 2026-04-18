@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Clock3, MapPin, Sparkles } from "lucide-react";
 
 import { OnboardingShell } from "@/app/onboarding/onboarding-shell";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -74,19 +75,30 @@ export default function GuestPreferencesPage() {
       description={onboardingConfig.guest.preferences.description}
       step={onboardingConfig.guest.preferences.step}
     >
-      <form onSubmit={onSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={onboardingConfig.guest.preferences.fields.city.id}>{onboardingConfig.guest.preferences.fields.city.label}</Label>
-          <Input
-            id={onboardingConfig.guest.preferences.fields.city.id}
-            placeholder={onboardingConfig.guest.preferences.fields.city.placeholder}
-            {...register("city")}
-          />
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <div className="space-y-2.5">
+          <Label htmlFor={onboardingConfig.guest.preferences.fields.city.id} className="text-sm font-medium">
+            {onboardingConfig.guest.preferences.fields.city.label}
+          </Label>
+
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id={onboardingConfig.guest.preferences.fields.city.id}
+              placeholder={onboardingConfig.guest.preferences.fields.city.placeholder}
+              className="h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none"
+              {...register("city")}
+            />
+          </div>
+
           {errors.city ? <p className="text-sm text-destructive">{errors.city.message}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Label>{onboardingConfig.guest.preferences.time.label}</Label>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock3 className="size-4 text-muted-foreground" />
+            <Label className="text-sm font-medium">{onboardingConfig.guest.preferences.time.label}</Label>
+          </div>
 
           <Controller
             control={control}
@@ -97,7 +109,11 @@ export default function GuestPreferencesPage() {
                   const checked = field.value.includes(option.id);
 
                   return (
-                    <label key={option.id} htmlFor={option.id} className="flex items-center gap-3 rounded-lg border p-4">
+                    <label
+                      key={option.id}
+                      htmlFor={option.id}
+                      className="flex items-center gap-3 rounded-[20px] border p-4 transition hover:border-foreground/20 hover:bg-muted/30"
+                    >
                       <Checkbox
                         id={option.id}
                         checked={checked}
@@ -121,8 +137,11 @@ export default function GuestPreferencesPage() {
           {errors.times ? <p className="text-sm text-destructive">{errors.times.message}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Label>{onboardingConfig.guest.preferences.important.label}</Label>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-muted-foreground" />
+            <Label className="text-sm font-medium">{onboardingConfig.guest.preferences.important.label}</Label>
+          </div>
 
           <Controller
             control={control}
@@ -133,7 +152,11 @@ export default function GuestPreferencesPage() {
                   const checked = field.value.includes(option.id);
 
                   return (
-                    <label key={option.id} htmlFor={option.id} className="flex items-center gap-3 rounded-lg border p-4">
+                    <label
+                      key={option.id}
+                      htmlFor={option.id}
+                      className="flex items-center gap-3 rounded-[20px] border p-4 transition hover:border-foreground/20 hover:bg-muted/30"
+                    >
                       <Checkbox
                         id={option.id}
                         checked={checked}
@@ -159,7 +182,7 @@ export default function GuestPreferencesPage() {
 
         {errors.root ? <p className="text-sm text-destructive">{errors.root.message}</p> : null}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="h-12 w-full rounded-2xl text-sm font-medium" disabled={isSubmitting}>
           {onboardingConfig.guest.preferences.cta.submit}
         </Button>
       </form>

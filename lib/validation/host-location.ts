@@ -30,27 +30,27 @@ function isValidInstagramOrEmpty(value: string): boolean {
   }
 }
 
+const optionalUrl = z
+  .string()
+  .trim()
+  .refine((value) => value === "" || /^https?:\/\/.+/i.test(value), {
+    message: "Bitte gib eine gültige URL ein.",
+  });
+
 export const hostLocationSchema = z.object({
-  category: z.string().trim().min(1, "Bitte wähle eine Kategorie aus."),
-  description: z
-    .string()
-    .trim()
-    .min(1, "Bitte gib eine Beschreibung ein.")
-    .min(20, "Die Beschreibung muss mindestens 20 Zeichen lang sein.")
-    .max(500, "Die Beschreibung darf maximal 500 Zeichen lang sein."),
-  website: z
-    .string()
-    .trim()
-    .refine((value) => isValidUrlOrEmpty(value), {
-      message: "Bitte gib eine gültige Website-URL ein.",
-    }),
-  instagram: z
-    .string()
-    .trim()
-    .refine((value) => isValidInstagramOrEmpty(value), {
-      message: "Bitte gib eine gültige Instagram-URL ein.",
-    }),
-  amenities: z.array(z.string()),
+  category: z.string().trim().min(1, "Bitte wähle eine Kategorie."),
+  description: z.string().trim().min(20, "Bitte beschreibe deinen Spot etwas genauer.").max(800, "Die Beschreibung ist zu lang."),
+  website: optionalUrl,
+  instagram: optionalUrl,
+  amenities: z.array(z.string()).min(1, "Bitte wähle mindestens eine Ausstattung."),
+  gallery: z
+    .array(
+      z.object({
+        url: optionalUrl,
+        alt: z.string().trim().max(120, "Der Alt-Text ist zu lang."),
+      }),
+    )
+    .length(3),
 });
 
 export type HostLocationFormValues = z.infer<typeof hostLocationSchema>;

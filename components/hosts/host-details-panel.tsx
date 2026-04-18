@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Star, X } from "lucide-react";
-
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AppProfile, HostGalleryImage, HostReviewData } from "@/types/user-profile";
 import { AMENITY_ICONS } from "@/lib/amenities-icons";
+import { useAuth } from "../providers/auth-provider";
 
 type HostDetailsPanelProps = {
   host: AppProfile;
@@ -57,7 +59,6 @@ function HostImageGallery({ images, title }: { images: HostGalleryImage[]; title
 
   const selectableImages = normalizedImages.filter((image) => image.url);
   const [activeImageId, setActiveImageId] = useState(selectableImages[0]?.id ?? null);
-
   const activeImage = selectableImages.find((image) => image.id === activeImageId) ?? selectableImages[0] ?? null;
 
   return (
@@ -91,8 +92,10 @@ function HostImageGallery({ images, title }: { images: HostGalleryImage[]; title
       </div>
 
       <div className="space-y-3">
-        <div className="overflow-hidden rounded-2xl bg-muted lg:h-[304px]">
-          {activeImage ? <img src={activeImage.url} alt={activeImage.alt || title} className="h-full w-full object-cover" /> : null}
+        <div className="relative overflow-hidden rounded-2xl bg-muted lg:h-[304px]">
+          {activeImage ? (
+            <Image src={activeImage.url} alt={activeImage.alt || title} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 600px" priority />
+          ) : null}
         </div>
 
         <div className="grid grid-cols-3 gap-2 lg:hidden">
@@ -110,7 +113,9 @@ function HostImageGallery({ images, title }: { images: HostGalleryImage[]; title
                 )}
                 aria-label={`Bild ${index + 1} anzeigen`}
               >
-                <img src={image.url} alt={image.alt} className="h-20 w-full object-cover" />
+                <div className="relative h-20 w-full">
+                  <Image src={image.url} alt={image.alt} fill className="object-cover" sizes="120px" />
+                </div>
               </button>
             );
           })}
@@ -171,6 +176,7 @@ function HostMetaRow({ host }: { host: AppProfile }) {
 export function HostDetailsPanel({ host, onClose }: HostDetailsPanelProps) {
   const images = host.hostContent?.gallery ?? [];
   const reviews = host.hostContent?.reviews ?? [];
+  const { profile } = useAuth();
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-3xl border bg-background">
@@ -193,10 +199,11 @@ export function HostDetailsPanel({ host, onClose }: HostDetailsPanelProps) {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button size="lg" className="sm:min-w-36 rounded-full">
-              Jetzt buchen
+            <Button asChild size="lg" className="rounded-full sm:min-w-36">
+              {profile ? <Link href={`/book/${host.uid}`}>Jetzt buchen</Link> : <Link href="/auth/sign-in">Anmelden</Link>}
             </Button>
-            <Button variant="outline" size="lg" className="sm:min-w-36 rounded-full">
+
+            <Button size="lg" disabled={!profile} variant="outline" className="rounded-full sm:min-w-36">
               Anfrage
             </Button>
           </div>

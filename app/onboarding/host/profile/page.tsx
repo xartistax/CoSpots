@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, MapPin, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,70 +76,105 @@ export default function HostProfilePage() {
       description={onboardingConfig.host.profile.description}
       step={onboardingConfig.host.profile.step}
     >
-      <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.profile.fields.operatorName.id}>{onboardingConfig.host.profile.fields.operatorName.label}</Label>
-            <Input
-              id={onboardingConfig.host.profile.fields.operatorName.id}
-              placeholder={onboardingConfig.host.profile.fields.operatorName.placeholder}
-              className={errors.operatorName ? "border-destructive" : ""}
-              {...register("operatorName")}
-            />
+          <div className="space-y-2.5">
+            <Label htmlFor={onboardingConfig.host.profile.fields.operatorName.id} className="text-sm font-medium">
+              {onboardingConfig.host.profile.fields.operatorName.label}
+            </Label>
+
+            <div className="relative">
+              <Building2 className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id={onboardingConfig.host.profile.fields.operatorName.id}
+                placeholder={onboardingConfig.host.profile.fields.operatorName.placeholder}
+                className={["h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none", errors.operatorName ? "border-destructive" : ""].join(" ")}
+                {...register("operatorName")}
+              />
+            </div>
+
             {errors.operatorName ? <p className="text-sm text-destructive">{errors.operatorName.message}</p> : null}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.profile.fields.phone.id}>{onboardingConfig.host.profile.fields.phone.label}</Label>
-            <Input
-              id={onboardingConfig.host.profile.fields.phone.id}
-              type="tel"
-              placeholder={onboardingConfig.host.profile.fields.phone.placeholder}
-              className={errors.phone ? "border-destructive" : ""}
-              {...register("phone")}
-            />
+          <div className="space-y-2.5">
+            <Label htmlFor={onboardingConfig.host.profile.fields.phone.id} className="text-sm font-medium">
+              {onboardingConfig.host.profile.fields.phone.label}
+            </Label>
+
+            <div className="relative">
+              <Phone className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id={onboardingConfig.host.profile.fields.phone.id}
+                type="tel"
+                placeholder={onboardingConfig.host.profile.fields.phone.placeholder}
+                className={["h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none", errors.phone ? "border-destructive" : ""].join(" ")}
+                {...register("phone")}
+              />
+            </div>
+
             {errors.phone ? <p className="text-sm text-destructive">{errors.phone.message}</p> : null}
           </div>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.profile.fields.locationName.id}>{onboardingConfig.host.profile.fields.locationName.label}</Label>
-            <Input
-              id={onboardingConfig.host.profile.fields.locationName.id}
-              placeholder={onboardingConfig.host.profile.fields.locationName.placeholder}
-              className={errors.locationName ? "border-destructive" : ""}
-              {...register("locationName")}
-            />
+          <div className="space-y-2.5">
+            <Label htmlFor={onboardingConfig.host.profile.fields.locationName.id} className="text-sm font-medium">
+              {onboardingConfig.host.profile.fields.locationName.label}
+            </Label>
+
+            <div className="relative">
+              <Building2 className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id={onboardingConfig.host.profile.fields.locationName.id}
+                placeholder={onboardingConfig.host.profile.fields.locationName.placeholder}
+                className={["h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none", errors.locationName ? "border-destructive" : ""].join(" ")}
+                {...register("locationName")}
+              />
+            </div>
+
             {errors.locationName ? <p className="text-sm text-destructive">{errors.locationName.message}</p> : null}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={onboardingConfig.host.profile.fields.city.id}>{onboardingConfig.host.profile.fields.city.label}</Label>
-            <Input
-              id={onboardingConfig.host.profile.fields.city.id}
-              placeholder={onboardingConfig.host.profile.fields.city.placeholder}
-              className={errors.city ? "border-destructive" : ""}
-              {...register("city")}
-            />
+          <div className="space-y-2.5">
+            <Label htmlFor={onboardingConfig.host.profile.fields.city.id} className="text-sm font-medium">
+              {onboardingConfig.host.profile.fields.city.label}
+            </Label>
+
+            <div className="relative">
+              <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id={onboardingConfig.host.profile.fields.city.id}
+                placeholder={onboardingConfig.host.profile.fields.city.placeholder}
+                className={["h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none", errors.city ? "border-destructive" : ""].join(" ")}
+                {...register("city")}
+              />
+            </div>
+
             {errors.city ? <p className="text-sm text-destructive">{errors.city.message}</p> : null}
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={onboardingConfig.host.profile.fields.address.id}>{onboardingConfig.host.profile.fields.address.label}</Label>
-          <Input
-            id={onboardingConfig.host.profile.fields.address.id}
-            placeholder={onboardingConfig.host.profile.fields.address.placeholder}
-            className={errors.address ? "border-destructive" : ""}
-            {...register("address")}
-          />
+        <div className="space-y-2.5">
+          <Label htmlFor={onboardingConfig.host.profile.fields.address.id} className="text-sm font-medium">
+            {onboardingConfig.host.profile.fields.address.label}
+          </Label>
+
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id={onboardingConfig.host.profile.fields.address.id}
+              placeholder={onboardingConfig.host.profile.fields.address.placeholder}
+              className={["h-12 rounded-2xl border-border/80 pl-11 pr-4 shadow-none", errors.address ? "border-destructive" : ""].join(" ")}
+              {...register("address")}
+            />
+          </div>
+
           {errors.address ? <p className="text-sm text-destructive">{errors.address.message}</p> : null}
         </div>
 
         {errors.root ? <p className="text-sm text-destructive">{errors.root.message}</p> : null}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="h-12 w-full rounded-2xl text-sm font-medium" disabled={isSubmitting}>
           {onboardingConfig.host.profile.cta.submit}
         </Button>
       </form>

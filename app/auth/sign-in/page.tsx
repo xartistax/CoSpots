@@ -3,23 +3,18 @@
 import Link from "next/link";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { OnboardingShell } from "@/app/onboarding/onboarding-shell";
-import { GoogleButton } from "@/components/ui/google-button";
+import { GoogleButton } from "@/components/auth/google-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authConfig } from "@/lib/config/auth";
 import { auth } from "@/lib/firebase/client";
-import { getUserProfile } from "@/lib/firebase/user-profile";
-import { useAuth } from "@/components/providers/auth-provider";
-import { Spinner } from "@/components/ui/spinner";
-import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { firebaseUser, loading: authLoading } = useAuth();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,19 +27,22 @@ export default function LoginPage() {
 
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      const profile = await getUserProfile(result.user.uid);
+      const token = await result.user.getIdToken(true);
 
-      if (!profile) {
-        router.replace("/onboarding");
-        return;
+      const response = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Session konnte nicht gesetzt werden.");
       }
 
-      if (profile.onboardingCompleted) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      router.replace(profile.onboardingStep ?? "/onboarding");
+      router.replace("/onboarding");
+      router.refresh();
     } catch (error) {
       console.error("Login Error:", error);
       setError("Login fehlgeschlagen");
@@ -53,49 +51,54 @@ export default function LoginPage() {
     }
   }
 
-  if (authLoading && !firebaseUser) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Spinner />
-      </main>
-    );
-  }
-
-  // 🔥 optional: verhindert render wenn redirect kommt
-  if (firebaseUser) {
-    return null;
-  }
-
   return (
     <OnboardingShell title={authConfig.login.title} description={authConfig.login.description}>
       <div className="flex flex-col gap-6">
         <GoogleButton />
 
-        <div className="relative text-center text-sm">
-          <span className="relative z-10 bg-background px-2 text-muted-foreground">oder</span>
-          <div className="absolute left-0 top-1/2 w-full -translate-y-1/2 border-t" />
+        <div className="relative text-center">
+          <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t" />
+          <span className="relative z-10 bg-background px-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">oder</span>
         </div>
 
-        <form action={onSubmit} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={authConfig.login.fields.email.id}>{authConfig.login.fields.email.label}</Label>
-            <Input id={authConfig.login.fields.email.id} name={authConfig.login.fields.email.id} type="email" required />
+        <form action={onSubmit} className="flex flex-col gap-5">
+          <div className="space-y-2.5">
+            <Label htmlFor={authConfig.login.fields.email.id} className="text-sm font-medium">
+              {authConfig.login.fields.email.label}
+            </Label>
+            <Input
+              id={authConfig.login.fields.email.id}
+              name={authConfig.login.fields.email.id}
+              type="email"
+              required
+              placeholder="name@beispiel.ch"
+              className="h-12 rounded-2xl border-border/80 px-4 shadow-none"
+            />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={authConfig.login.fields.password.id}>{authConfig.login.fields.password.label}</Label>
-            <Input id={authConfig.login.fields.password.id} name={authConfig.login.fields.password.id} type="password" required />
+          <div className="space-y-2.5">
+            <Label htmlFor={authConfig.login.fields.password.id} className="text-sm font-medium">
+              {authConfig.login.fields.password.label}
+            </Label>
+            <Input
+              id={authConfig.login.fields.password.id}
+              name={authConfig.login.fields.password.id}
+              type="password"
+              required
+              placeholder="Passwort eingeben"
+              className="h-12 rounded-2xl border-border/80 px-4 shadow-none"
+            />
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Lädt..." : "Login"}
+          <Button type="submit" disabled={loading} className="h-12 rounded-2xl text-sm font-medium">
+            {loading ? "Lädt..." : "Anmelden"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
             Kein Konto?{" "}
-            <Link href="/auth/sign-up" className="underline underline-offset-4">
+            <Link href="/auth/sign-up" className="font-medium text-foreground underline-offset-4 hover:underline">
               Registrieren
             </Link>
           </p>
