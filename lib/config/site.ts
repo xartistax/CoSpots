@@ -1,12 +1,12 @@
 export const siteConfig = {
-  name: "PWA App",
-  description: "Best PWA App in the world",
-  url: "https://yourdomain.com",
+  name: "CoSpots",
+  description: "CoSpots - Finde und teile die besten Coworking-Spots in deiner Stadt",
+  url: "https://cospots.com",
   themeColor: "#000000",
   social: {
     twitter: {
-      handle: "@DavidWShadow",
-      url: "https://twitter.com/DavidWShadow",
+      handle: "@cospotsapp",
+      url: "https://twitter.com/cospotsapp",
     },
   },
 };
