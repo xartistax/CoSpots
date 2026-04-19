@@ -22,20 +22,20 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "16x16", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/touch-icon-iphone.png" },
-      { url: "/icons/touch-icon-ipad.png", sizes: "152x152" },
-      { url: "/icons/touch-icon-iphone-retina.png", sizes: "180x180" },
-      { url: "/icons/touch-icon-ipad-retina.png", sizes: "167x167" },
+      { url: "/icon512_rounded.png" },
+      { url: "/icon512_rounded.png", sizes: "152x152" },
+      { url: "/icon512_rounded.png", sizes: "180x180" },
+      { url: "/icon512_rounded.png", sizes: "167x167" },
     ],
     shortcut: ["/favicon.ico"],
     other: [
       {
         rel: "mask-icon",
-        url: "/icons/safari-pinned-tab.svg",
+        url: "/globe.svg",
         color: "#F9D02D",
       },
     ],
