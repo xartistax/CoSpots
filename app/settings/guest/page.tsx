@@ -152,7 +152,7 @@ export default function GuestSettingsPage() {
   if (loading || !firebaseUser || !profile || !canAccess) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="text-sm text-muted-foreground">Lädt...</div>
+        <div className="text-sm text-muted-foreground"></div>
       </main>
     );
   }
